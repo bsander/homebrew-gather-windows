@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build
+        run: make release
+
+      - name: Test
+        run: swift test
+
+      - name: Compute version
+        id: version
+        run: |
+          BASE="v0.$(date +%Y.%m%d)"
+          TAG="$BASE"
+          SUFFIX=1
+          while git rev-parse "$TAG" >/dev/null 2>&1; do
+            TAG="${BASE}.${SUFFIX}"
+            SUFFIX=$((SUFFIX + 1))
+          done
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          git tag "$TAG"
+          git push origin "$TAG"
+
+      - name: Create source tarball
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          git archive --format=tar.gz --prefix="gather-windows-${TAG}/" "$TAG" -o "gather-windows-${TAG}.tar.gz"
+
+      - name: Create binary tarball
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          STAGING=$(mktemp -d)
+          cp .build/universal/gather-windows "$STAGING/"
+          tar -czf "gather-windows-${TAG}-macos.tar.gz" -C "$STAGING" gather-windows
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          gh release create "$TAG" \
+            "gather-windows-${TAG}-macos.tar.gz" \
+            "gather-windows-${TAG}.tar.gz" \
+            --generate-notes
+
+      - name: Update formula on brew branch
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          SHA256=$(shasum -a 256 "gather-windows-${TAG}-macos.tar.gz" | awk '{print $1}')
+          ASSET_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/gather-windows-${TAG}-macos.tar.gz"
+          VERSION="${TAG#v}"
+          BREW_DIR=$(mktemp -d)
+          git clone --branch brew --single-branch "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" "$BREW_DIR"
+          cd "$BREW_DIR"
+          sed -i '' "s|url \".*\"|url \"${ASSET_URL}\"|" Formula/gather-windows.rb
+          sed -i '' "s|version \".*\"|version \"${VERSION}\"|" Formula/gather-windows.rb
+          sed -i '' "s|sha256 \".*\"|sha256 \"${SHA256}\"|" Formula/gather-windows.rb
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          NOTICE='> **Note:** This is the Homebrew tap branch. Source code and development happens on the [`main` branch](https://github.com/${{ github.repository }}/tree/main).\n'
+          printf '%b\n%s\n' "$NOTICE" "$(cat "$GITHUB_WORKSPACE/README.md")" > README.md
+          git add Formula/gather-windows.rb README.md
+          git commit -m "Update formula for ${TAG}"
+          git push origin brew
