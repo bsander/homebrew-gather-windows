@@ -26,7 +26,7 @@ struct DisplayInfo {
 
 /// Window information extracted from Accessibility API
 struct WindowInfo {
-    let element: AXUIElement
+    let element: AXUIElement?
     let processName: String
     let title: String
     let bounds: CGRect
@@ -60,10 +60,3 @@ enum Constants {
     static let verificationMargin: CGFloat = 50
 }
 
-/// Command-line options
-struct Options {
-    var help: Bool = false
-    var includeFullscreen: Bool = false
-    var verbose: Bool = false
-    var hideDuringMove: Bool = false
-}

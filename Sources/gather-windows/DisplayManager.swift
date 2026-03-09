@@ -1,19 +1,24 @@
 import AppKit
 
 /// Manages display detection and window positioning relative to displays
-class DisplayManager {
+struct DisplayManager {
+    let screenProvider: ScreenProvider
+
+    init(screenProvider: ScreenProvider = SystemScreenProvider()) {
+        self.screenProvider = screenProvider
+    }
+
     /// Get all displays (JXA lines 112-133)
-    static func getAllDisplays() -> [DisplayInfo] {
-        let screens = NSScreen.screens
+    func getAllDisplays() -> [DisplayInfo] {
+        let screens = screenProvider.screens()
         var displays: [DisplayInfo] = []
 
         for (index, screen) in screens.enumerated() {
-            let frame = screen.frame
-            let isMain = screen == NSScreen.main
+            let isMain = screen.isMain
 
             displays.append(DisplayInfo(
                 index: index + 1,
-                frame: frame,
+                frame: screen.frame,
                 isMain: isMain,
                 name: isMain ? "Main Display" : "Display \(index + 1)"
             ))

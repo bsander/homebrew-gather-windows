@@ -8,14 +8,19 @@ let package = Package(
     ],
     products: [
         .executable(
-            name: "gather-windows-swift",
+            name: "gather-windows",
             targets: ["gather-windows"]
         ),
+    ],
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
     ],
     targets: [
         .executableTarget(
             name: "gather-windows",
-            dependencies: [],
+            dependencies: [
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+            ],
             path: "Sources/gather-windows",
             swiftSettings: [
                 .unsafeFlags(["-parse-as-library"])
