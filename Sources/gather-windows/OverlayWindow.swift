@@ -3,6 +3,8 @@ import SwiftUI
 
 /// Borderless fullscreen overlay window positioned on a specific screen
 class OverlayWindow: NSWindow {
+    override var canBecomeKey: Bool { true }
+
     init(screen: NSScreen, screenNumber: Int) {
         super.init(
             contentRect: screen.frame,
