@@ -54,6 +54,46 @@ struct IntegrationTests {
         #expect(result == CGRect(x: 0, y: -1080, width: 1920, height: 1080))
     }
 
+    @Test func matchScreenToDisplay_convertsCocoaToCGBeforeMatching() {
+        // Primary: Cocoa (0,0,1440,900) → CG (0,0,1440,900) — matches display 1
+        // Secondary: Cocoa (1440,0,1920,1080) → CG (1440,-180,1920,1080) — matches display 2
+        let displays = [
+            makeDisplay(index: 1, frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true, name: "Main"),
+            makeDisplay(index: 2, frame: CGRect(x: 1440, y: -180, width: 1920, height: 1080), isMain: false, name: "External"),
+        ]
+
+        let primaryCocoaFrame = CGRect(x: 0, y: 0, width: 1440, height: 900)
+        let secondaryCocoaFrame = CGRect(x: 1440, y: 0, width: 1920, height: 1080)
+
+        let match1 = CoordinateConverter.matchScreenToDisplay(
+            screenFrame: primaryCocoaFrame,
+            displays: displays,
+            primaryScreenHeight: 900
+        )
+        #expect(match1?.index == 1)
+
+        let match2 = CoordinateConverter.matchScreenToDisplay(
+            screenFrame: secondaryCocoaFrame,
+            displays: displays,
+            primaryScreenHeight: 900
+        )
+        #expect(match2?.index == 2)
+    }
+
+    @Test func matchScreenToDisplay_returnsNilForUnmatchedScreen() {
+        let displays = [
+            makeDisplay(index: 1, frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true, name: "Main"),
+        ]
+
+        let unmatchedFrame = CGRect(x: 5000, y: 0, width: 1920, height: 1080)
+        let match = CoordinateConverter.matchScreenToDisplay(
+            screenFrame: unmatchedFrame,
+            displays: displays,
+            primaryScreenHeight: 900
+        )
+        #expect(match == nil)
+    }
+
     @Test func realDisplayHasSafeArea_smallerThanFrame() {
         let dm = DisplayManager()
         let displays = dm.getAllDisplays()
