@@ -4,8 +4,9 @@ BUILD_DIR = .build
 APP_BUNDLE = $(BUILD_DIR)/$(APP_NAME).app
 INSTALL_DIR = /Applications
 CLI_LINK = /usr/local/bin/gather-windows
+CODESIGN_IDENTITY = Gather Windows Dev
 
-.PHONY: build test run release install dev uninstall clean help
+.PHONY: build test run release install dev uninstall clean help setup-codesign
 
 build: ## Build debug .app bundle
 	swift build --disable-sandbox
@@ -42,6 +43,9 @@ clean: ## Remove build artifacts
 	swift package clean
 	rm -rf .build
 
+setup-codesign: ## Create self-signed cert for persistent TCC permissions
+	@bash scripts/create-codesign-cert.sh "$(CODESIGN_IDENTITY)"
+
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
@@ -55,4 +59,12 @@ _bundle:
 		cp "$(BUILD_DIR)/universal/$(BINARY_NAME)" "$(APP_BUNDLE)/Contents/MacOS/"; \
 	else \
 		cp "$(BUILD_DIR)/$(CONFIG)/$(BINARY_NAME)" "$(APP_BUNDLE)/Contents/MacOS/"; \
+	fi
+	@if security find-identity -v -p codesigning 2>/dev/null | grep -q "$(CODESIGN_IDENTITY)"; then \
+		echo "Signing with '$(CODESIGN_IDENTITY)'..."; \
+		codesign --force --sign "$(CODESIGN_IDENTITY)" "$(APP_BUNDLE)"; \
+	else \
+		echo "\033[33mWarning: Certificate '$(CODESIGN_IDENTITY)' not found. Using ad-hoc signing.\033[0m"; \
+		echo "\033[33mTCC permissions will reset each build. Run 'make setup-codesign' to fix.\033[0m"; \
+		codesign --force --sign - "$(APP_BUNDLE)"; \
 	fi
