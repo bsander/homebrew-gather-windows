@@ -22,11 +22,32 @@ protocol AccessibilityProvider: Sendable {
     func currentBounds(of window: WindowInfo) -> CGRect?
 }
 
+// MARK: - Coordinate Conversion
+
+/// Converts between NSScreen (Cocoa) and CG/AX coordinate systems.
+/// Cocoa: origin at bottom-left of primary screen, y increases upward.
+/// CG/AX: origin at top-left of primary screen, y increases downward.
+enum CoordinateConverter {
+    static func cocoaToCG(frame: CGRect, primaryScreenHeight: CGFloat) -> CGRect {
+        let cgY = primaryScreenHeight - frame.origin.y - frame.height
+        return CGRect(x: frame.origin.x, y: cgY, width: frame.width, height: frame.height)
+    }
+}
+
 // MARK: - Production Conformances
 
 struct SystemScreenProvider: ScreenProvider {
     func screens() -> [(frame: CGRect, isMain: Bool)] {
-        NSScreen.screens.map { ($0.frame, $0 == NSScreen.main) }
+        let screens = NSScreen.screens
+        guard let primary = screens.first else { return [] }
+        let primaryHeight = primary.frame.height
+        return screens.map { screen in
+            let cgFrame = CoordinateConverter.cocoaToCG(
+                frame: screen.frame,
+                primaryScreenHeight: primaryHeight
+            )
+            return (cgFrame, screen == primary)
+        }
     }
 }
 

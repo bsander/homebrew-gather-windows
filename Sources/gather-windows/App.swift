@@ -31,12 +31,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func startOverlayMode() {
+        // Check accessibility permissions before anything else
+        let key = "AXTrustedCheckOptionPrompt" as CFString
+        let options = [key: true] as CFDictionary
+        if !AXIsProcessTrustedWithOptions(options) {
+            showNotification(
+                title: "Gather Windows",
+                body: "Accessibility permission required. Please grant access in System Settings → Privacy & Security → Accessibility, then relaunch."
+            )
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                NSApp.terminate(nil)
+            }
+            return
+        }
+
         let displayManager = DisplayManager()
         let displays = displayManager.getAllDisplays()
         let screens = NSScreen.screens
 
         guard displays.count > 1 else {
-            showSingleScreenNotification()
+            showNotification(
+                title: "Gather Windows",
+                body: "Only one screen detected."
+            )
             // Quit after a short delay to allow notification to post
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 NSApp.terminate(nil)
@@ -109,15 +126,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         abs(a.height - b.height) < 1
     }
 
-    private func showSingleScreenNotification() {
+    private func showNotification(title: String, body: String) {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert]) { granted, _ in
             guard granted else { return }
             let content = UNMutableNotificationContent()
-            content.title = "Gather Windows"
-            content.body = "Only one screen detected."
+            content.title = title
+            content.body = body
             let request = UNNotificationRequest(
-                identifier: "single-screen",
+                identifier: "gather-windows-info",
                 content: content,
                 trigger: nil
             )

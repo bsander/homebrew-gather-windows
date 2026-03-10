@@ -20,7 +20,7 @@ struct DisplayManager {
     }
 
     /// Find the built-in display (JXA lines 136-145)
-    /// The main screen is typically the built-in display on MacBooks
+    /// The primary screen (menu bar) is typically the built-in display on MacBooks
     static func findBuiltInDisplay(_ allDisplays: [DisplayInfo]) -> DisplayInfo? {
         // First try to find the main display
         for display in allDisplays {
