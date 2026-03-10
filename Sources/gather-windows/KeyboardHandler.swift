@@ -2,7 +2,8 @@ import AppKit
 
 /// Monitors keyboard events for overlay mode
 class KeyboardHandler {
-    private var monitor: Any?
+    private var localMonitor: Any?
+    private var globalMonitor: Any?
     private let onNumberPressed: (Int) -> Void
     private let onEscape: () -> Void
     private let maxNumber: Int
@@ -14,17 +15,26 @@ class KeyboardHandler {
     }
 
     func start() {
-        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+        // Local monitor: fires when app is active, can consume events
+        localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             self?.handleKey(event)
             return nil // consume the event
+        }
+        // Global monitor: fires when app is NOT active (fallback)
+        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            self?.handleKey(event)
         }
     }
 
     func stop() {
-        if let monitor {
-            NSEvent.removeMonitor(monitor)
+        if let localMonitor {
+            NSEvent.removeMonitor(localMonitor)
         }
-        monitor = nil
+        localMonitor = nil
+        if let globalMonitor {
+            NSEvent.removeMonitor(globalMonitor)
+        }
+        globalMonitor = nil
     }
 
     /// Exposed for testing — same as handleKey
