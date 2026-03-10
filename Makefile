@@ -27,14 +27,12 @@ release: ## Build universal release .app bundle
 		-output "$(BUILD_DIR)/universal/$(BINARY_NAME)"
 	$(MAKE) _bundle CONFIG=universal
 
-dev: build ## Symlink debug .app into /Applications (always runs latest build)
+dev: build ## Copy debug .app into /Applications (run after each build)
 	rm -rf "$(INSTALL_DIR)/$(APP_NAME).app"
-	ln -sf "$(CURDIR)/$(APP_BUNDLE)" "$(INSTALL_DIR)/$(APP_NAME).app"
+	cp -R "$(APP_BUNDLE)" "$(INSTALL_DIR)/$(APP_NAME).app"
 
-install: release ## Install release .app to /Applications and CLI symlink
+install: release ## Install release .app to /Applications
 	cp -R "$(APP_BUNDLE)" "$(INSTALL_DIR)/"
-	mkdir -p $(dir $(CLI_LINK))
-	ln -sf "$(INSTALL_DIR)/$(APP_NAME).app/Contents/MacOS/$(BINARY_NAME)" "$(CLI_LINK)"
 
 uninstall: ## Remove .app from /Applications and CLI symlink
 	rm -rf "$(INSTALL_DIR)/$(APP_NAME).app"
@@ -50,8 +48,9 @@ help: ## Show this help
 # Internal: create .app bundle from built binary
 _bundle:
 	rm -rf "$(APP_BUNDLE)"
-	mkdir -p "$(APP_BUNDLE)/Contents/MacOS"
+	mkdir -p "$(APP_BUNDLE)/Contents/MacOS" "$(APP_BUNDLE)/Contents/Resources"
 	cp Info.plist "$(APP_BUNDLE)/Contents/"
+	cp AppIcon.icns "$(APP_BUNDLE)/Contents/Resources/"
 	@if [ "$(CONFIG)" = "universal" ]; then \
 		cp "$(BUILD_DIR)/universal/$(BINARY_NAME)" "$(APP_BUNDLE)/Contents/MacOS/"; \
 	else \
