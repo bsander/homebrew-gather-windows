@@ -11,6 +11,7 @@ struct GatherWindowsApp: App {
     }
 }
 
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var overlayWindows: [OverlayWindow] = []
     private var keyboardHandler: KeyboardHandler?
@@ -29,22 +30,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    @MainActor
     private func startOverlayMode() {
-        // Check accessibility permissions before anything else
-        let key = "AXTrustedCheckOptionPrompt" as CFString
-        let options = [key: true] as CFDictionary
-        if !AXIsProcessTrustedWithOptions(options) {
-            showNotification(
-                title: "Gather Windows",
-                body: "Accessibility permission required. Please grant access in System Settings → Privacy & Security → Accessibility, then relaunch."
-            )
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                NSApp.terminate(nil)
-            }
-            return
-        }
-
         let displayManager = DisplayManager()
         let displays = displayManager.getAllDisplays()
         let screens = NSScreen.screens
@@ -61,10 +47,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        // Check accessibility before showing overlays (without prompting)
+        let accessibility = SystemAccessibilityProvider()
+        if !accessibility.checkAccessibility(prompt: false) {
+            // Not trusted — show the System Settings dialog once, then exit
+            _ = accessibility.checkAccessibility(prompt: true)
+            showNotification(
+                title: "Gather Windows",
+                body: "Accessibility permission required. Please grant access in System Settings > Privacy & Security > Accessibility, then relaunch."
+            )
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                NSApp.terminate(nil)
+            }
+            return
+        }
+
+        let primaryHeight = screens.first?.frame.height ?? 0
+
         // Create overlay window for each screen
         for screen in screens {
-            // Match screen to display by frame
-            let display = displays.first { displaysMatch($0.frame, screen.frame) }
+            let display = CoordinateConverter.matchScreenToDisplay(
+                screenFrame: screen.frame,
+                displays: displays,
+                primaryScreenHeight: primaryHeight
+            )
             let number = display?.index ?? 0
 
             let overlay = OverlayWindow(screen: screen, screenNumber: number)
@@ -72,8 +78,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             overlayWindows.append(overlay)
         }
 
-        // Make app active so it receives key events
+        // Switch to .regular so the app can receive keyboard focus.
+        // Reverted to .accessory in closeOverlays() to hide the Dock icon.
+        NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
+        overlayWindows.first?.makeKeyAndOrderFront(nil)
 
         // Start keyboard handler
         keyboardHandler = KeyboardHandler(
@@ -91,17 +100,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func handleScreenSelection(_ number: Int, displays: [DisplayInfo]) {
         guard let targetDisplay = displays.first(where: { $0.index == number }) else { return }
 
-        closeOverlays()
+        // Defer to next run loop iteration so the NSEvent monitor callback
+        // returns cleanly before we remove it — removing a monitor from
+        // within its own callback causes a SIGSEGV.
+        DispatchQueue.main.async { [weak self] in
+            self?.closeOverlays()
 
-        Task { @MainActor in
-            let windowManager = WindowManager()
-            let result = await windowManager.moveWindowsToDisplay(
-                targetDisplay,
-                includeFullscreen: false,
-                hideDuringMove: false
-            )
-            log("Moved \(result.movedCount) window(s) to \(targetDisplay.name)")
-            NSApp.terminate(nil)
+            Task { @MainActor in
+                let windowManager = WindowManager()
+                let result = await windowManager.moveWindowsToDisplay(
+                    targetDisplay,
+                    includeFullscreen: false,
+                    hideDuringMove: false
+                )
+                log("Moved \(result.movedCount) window(s) to \(targetDisplay.name)")
+                NSApp.terminate(nil)
+            }
         }
     }
 
@@ -112,18 +126,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             window.close()
         }
         overlayWindows.removeAll()
+        NSApp.setActivationPolicy(.accessory)
     }
 
     private func closeOverlaysAndQuit() {
-        closeOverlays()
-        NSApp.terminate(nil)
-    }
-
-    private func displaysMatch(_ a: CGRect, _ b: CGRect) -> Bool {
-        abs(a.origin.x - b.origin.x) < 1 &&
-        abs(a.origin.y - b.origin.y) < 1 &&
-        abs(a.width - b.width) < 1 &&
-        abs(a.height - b.height) < 1
+        // Also defer for the same reason — Escape is handled by the same monitor
+        DispatchQueue.main.async { [weak self] in
+            self?.closeOverlays()
+            NSApp.terminate(nil)
+        }
     }
 
     private func showNotification(title: String, body: String) {
