@@ -1,6 +1,6 @@
-# gather-windows
+# Gather Windows
 
-macOS CLI that moves windows from external displays to the built-in display.
+macOS app that shows numbered overlays on each screen, letting you pick a target display to gather all windows to. Also supports CLI mode when invoked with arguments.
 
 ## Conventions
 

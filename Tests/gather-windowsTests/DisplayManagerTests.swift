@@ -131,6 +131,72 @@ struct DisplayManagerTests {
         }
     }
 
+    // MARK: - displayForNumber
+
+    @Suite("displayForNumber")
+    struct DisplayForNumberTests {
+        @Test func number1_returnsMainDisplay() {
+            let screens: [(frame: CGRect, isMain: Bool)] = [
+                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true),
+                (frame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), isMain: false),
+            ]
+            let dm = DisplayManager(screenProvider: MockScreenProvider(mockScreens: screens))
+            let display = dm.displayForNumber(1)
+
+            #expect(display != nil)
+            #expect(display?.isMain == true)
+            #expect(display?.index == 1)
+        }
+
+        @Test func number2_returnsSecondDisplay() {
+            let screens: [(frame: CGRect, isMain: Bool)] = [
+                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true),
+                (frame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), isMain: false),
+            ]
+            let dm = DisplayManager(screenProvider: MockScreenProvider(mockScreens: screens))
+            let display = dm.displayForNumber(2)
+
+            #expect(display != nil)
+            #expect(display?.isMain == false)
+            #expect(display?.index == 2)
+        }
+
+        @Test func invalidNumber_returnsNil() {
+            let screens: [(frame: CGRect, isMain: Bool)] = [
+                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true),
+            ]
+            let dm = DisplayManager(screenProvider: MockScreenProvider(mockScreens: screens))
+            let display = dm.displayForNumber(5)
+
+            #expect(display == nil)
+        }
+
+        @Test func number0_returnsNil() {
+            let screens: [(frame: CGRect, isMain: Bool)] = [
+                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true),
+            ]
+            let dm = DisplayManager(screenProvider: MockScreenProvider(mockScreens: screens))
+
+            #expect(dm.displayForNumber(0) == nil)
+        }
+
+        @Test func usesScreenNumberingOrder() {
+            // External on left, main on right — external should be #2 despite being first in array
+            let screens: [(frame: CGRect, isMain: Bool)] = [
+                (frame: CGRect(x: -1920, y: 0, width: 1920, height: 1080), isMain: false),
+                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true),
+            ]
+            let dm = DisplayManager(screenProvider: MockScreenProvider(mockScreens: screens))
+
+            let display1 = dm.displayForNumber(1)
+            #expect(display1?.isMain == true)
+
+            let display2 = dm.displayForNumber(2)
+            #expect(display2?.isMain == false)
+            #expect(display2?.frame.origin.x == -1920)
+        }
+    }
+
     // MARK: - isWithinDisplay
 
     @Suite("isWithinDisplay")

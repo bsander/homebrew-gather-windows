@@ -8,23 +8,15 @@ struct DisplayManager {
         self.screenProvider = screenProvider
     }
 
-    /// Get all displays (JXA lines 112-133)
+    /// Get all displays with stable numbering: main=1, others sorted left-to-right
     func getAllDisplays() -> [DisplayInfo] {
-        let screens = screenProvider.screens()
-        var displays: [DisplayInfo] = []
+        ScreenNumbering.assignNumbers(screenProvider.screens())
+    }
 
-        for (index, screen) in screens.enumerated() {
-            let isMain = screen.isMain
-
-            displays.append(DisplayInfo(
-                index: index + 1,
-                frame: screen.frame,
-                isMain: isMain,
-                name: isMain ? "Main Display" : "Display \(index + 1)"
-            ))
-        }
-
-        return displays
+    /// Find display by its assigned number (1-based). Returns nil if out of range.
+    func displayForNumber(_ number: Int) -> DisplayInfo? {
+        let displays = getAllDisplays()
+        return displays.first { $0.index == number }
     }
 
     /// Find the built-in display (JXA lines 136-145)

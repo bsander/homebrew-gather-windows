@@ -4,23 +4,17 @@ import PackageDescription
 let package = Package(
     name: "gather-windows",
     platforms: [
-        .macOS(.v14)  // Requires macOS 14+ for Swift Concurrency
+        .macOS(.v14)
     ],
     products: [
         .executable(
-            name: "gather-windows",
+            name: "Gather Windows",
             targets: ["gather-windows"]
         ),
-    ],
-    dependencies: [
-        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
     ],
     targets: [
         .executableTarget(
             name: "gather-windows",
-            dependencies: [
-                .product(name: "ArgumentParser", package: "swift-argument-parser"),
-            ],
             path: "Sources/gather-windows",
             swiftSettings: [
                 .unsafeFlags(["-parse-as-library"])
