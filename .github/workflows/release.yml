@@ -50,8 +50,8 @@ jobs:
         run: |
           TAG="${{ steps.version.outputs.tag }}"
           STAGING=$(mktemp -d)
-          codesign --force --sign - .build/universal/gather-windows
-          cp .build/universal/gather-windows "$STAGING/"
+          codesign --force --sign - ".build/universal/Gather Windows"
+          cp ".build/universal/Gather Windows" "$STAGING/gather-windows"
           tar -czf "gather-windows-${TAG}-macos.tar.gz" -C "$STAGING" gather-windows
 
       - name: Create GitHub Release
