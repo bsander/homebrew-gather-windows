@@ -1,14 +1,37 @@
-# Homebrew Tap for gather-windows
+> **Note:** This is the Homebrew tap branch. Source code and development happens on the [`main` branch](https://github.com/bsander/homebrew-gather-windows/tree/main).
 
-This branch contains the Homebrew formula for [gather-windows](https://github.com/bsander/homebrew-gather-windows/tree/main).
+# Gather Windows
+
+macOS app that shows numbered overlays on each screen, letting you pick a target display to gather all windows to. Also supports CLI mode when invoked with arguments.
+
+## Prerequisites
+
+**Accessibility permission** is required. Grant access in **System Settings > Privacy & Security > Accessibility** before using the app. Without it, window moves will silently fail.
 
 ## Install
 
-```sh
-brew tap bsander/gather-windows
-brew install gather-windows
+```
+make install
+```
+
+Builds a universal release binary and copies `Gather Windows.app` to `/Applications/`.
+
+## Usage
+
+**App mode** (double-click or `open`): Shows numbered overlays on each screen. Press a number key to gather all windows to that display. Press Escape to cancel.
+
+**CLI mode**:
+
+```
+gather-windows <target-display-number>
+gather-windows --list
 ```
 
 ## Development
 
-Source code and development happens on the [`main` branch](https://github.com/bsander/homebrew-gather-windows/tree/main).
+```
+make build    # Debug build
+make test     # Run tests
+make dev      # Install debug build to /Applications
+make run      # Build and launch
+```
