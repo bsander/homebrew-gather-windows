@@ -68,6 +68,20 @@ struct ScreenNumberingTests {
         #expect(result[2].frame.origin.x == 3000)
     }
 
+    @Test func differentHeightDisplays_usesCGCoordinates() {
+        // In CG coords: taller secondary has negative y (top extends above primary)
+        // Primary: 1440x900 at (0,0), Secondary: 1920x1080 at (1440,-180)
+        let screens: [(frame: CGRect, isMain: Bool)] = [
+            (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true),
+            (frame: CGRect(x: 1440, y: -180, width: 1920, height: 1080), isMain: false),
+        ]
+        let result = ScreenNumbering.assignNumbers(screens)
+
+        #expect(result.count == 2)
+        #expect(result[0].frame == CGRect(x: 0, y: 0, width: 1440, height: 900))
+        #expect(result[1].frame == CGRect(x: 1440, y: -180, width: 1920, height: 1080))
+    }
+
     @Test func emptyScreens_returnsEmpty() {
         let result = ScreenNumbering.assignNumbers([])
         #expect(result.isEmpty)

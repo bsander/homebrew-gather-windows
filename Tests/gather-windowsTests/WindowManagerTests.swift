@@ -178,6 +178,78 @@ struct WindowManagerTests {
 
     // MARK: - Bounds calculation integration
 
+    // MARK: - Different-height display scenarios
+
+    @Suite("Different Height Displays")
+    struct DifferentHeightTests {
+        // CG coords: primary 1440x900 at origin, taller secondary to the right
+        let primary = makeDisplay(
+            index: 1,
+            frame: CGRect(x: 0, y: 0, width: 1440, height: 900),
+            isMain: true, name: "Main Display"
+        )
+        let secondary = makeDisplay(
+            index: 2,
+            frame: CGRect(x: 1440, y: -180, width: 1920, height: 1080),
+            isMain: false, name: "Display 2"
+        )
+
+        @Test @MainActor func windowOnSecondary_movedToPrimary() async {
+            let mock = MockAccessibilityProvider()
+            // Window on secondary display (CG coords: y is negative because secondary is taller)
+            mock.windowsByPID[1] = [
+                makeWindow(bounds: CGRect(x: 1600, y: -50, width: 500, height: 300))
+            ]
+            let workspace = MockWorkspaceProvider(apps: [(pid: 1, name: "App")])
+            let wm = WindowManager(workspace: workspace, accessibility: mock)
+
+            let result = await wm.moveWindowsToDisplay(primary, includeFullscreen: false, hideDuringMove: false)
+            #expect(result.movedCount == 1)
+            #expect(mock.movedWindows.count == 1)
+            // New bounds should be within primary display area
+            let newBounds = mock.movedWindows[0].bounds
+            #expect(newBounds.origin.x >= 0)
+            #expect(newBounds.origin.x + newBounds.width <= 1440)
+            #expect(newBounds.origin.y >= 0)
+            #expect(newBounds.origin.y + newBounds.height <= 900)
+        }
+
+        @Test @MainActor func windowOnPrimary_movedToTallerSecondary() async {
+            let mock = MockAccessibilityProvider()
+            mock.windowsByPID[1] = [
+                makeWindow(bounds: CGRect(x: 100, y: 100, width: 500, height: 300))
+            ]
+            let workspace = MockWorkspaceProvider(apps: [(pid: 1, name: "App")])
+            let wm = WindowManager(workspace: workspace, accessibility: mock)
+
+            let result = await wm.moveWindowsToDisplay(secondary, includeFullscreen: false, hideDuringMove: false)
+            #expect(result.movedCount == 1)
+            #expect(mock.movedWindows.count == 1)
+            // New bounds should be within secondary display area (CG coords)
+            let newBounds = mock.movedWindows[0].bounds
+            #expect(newBounds.origin.x >= 1440)
+            #expect(newBounds.origin.x + newBounds.width <= 1440 + 1920)
+            #expect(newBounds.origin.y >= -180)
+            #expect(newBounds.origin.y + newBounds.height <= -180 + 1080)
+        }
+
+        @Test @MainActor func windowAlreadyOnSecondary_notMovedToSecondary() async {
+            let mock = MockAccessibilityProvider()
+            // Window fully within secondary display bounds (CG coords)
+            mock.windowsByPID[1] = [
+                makeWindow(bounds: CGRect(x: 1600, y: 100, width: 500, height: 300))
+            ]
+            let workspace = MockWorkspaceProvider(apps: [(pid: 1, name: "App")])
+            let wm = WindowManager(workspace: workspace, accessibility: mock)
+
+            let result = await wm.moveWindowsToDisplay(secondary, includeFullscreen: false, hideDuringMove: false)
+            #expect(result.movedCount == 0)
+            #expect(mock.movedWindows.isEmpty)
+        }
+    }
+
+    // MARK: - Bounds calculation integration
+
     @Test @MainActor func movedWindow_receivesCalculatedBounds() async {
         let mock = MockAccessibilityProvider()
         let windowBounds = CGRect(x: 2000, y: 100, width: 800, height: 600)

@@ -129,6 +129,24 @@ struct DisplayManagerTests {
             let window = CGRect(x: 100, y: -500, width: 400, height: 300)
             #expect(DisplayManager.isOnExternalDisplay(window, builtIn) == true)
         }
+
+        // Different-height displays: secondary is taller, top extends above primary
+        // CG coords: primary (0,0,1440,900), secondary (1440,-180,1920,1080)
+        @Test func windowOnTallerSecondary_detectedAsExternalToMain() {
+            let window = CGRect(x: 1500, y: -100, width: 500, height: 300)
+            #expect(DisplayManager.isOnExternalDisplay(window, builtIn) == true)
+        }
+
+        @Test func windowOnTallerSecondary_detectedAsOnSecondary() {
+            let secondary = makeDisplay(
+                index: 2,
+                frame: CGRect(x: 1440, y: -180, width: 1920, height: 1080),
+                isMain: false, name: "External"
+            )
+            // Window at (1500, -100) is within secondary (1440..<3360, -180..<900)
+            let window = CGRect(x: 1500, y: -100, width: 500, height: 300)
+            #expect(DisplayManager.isOnExternalDisplay(window, secondary) == false)
+        }
     }
 
     // MARK: - displayForNumber

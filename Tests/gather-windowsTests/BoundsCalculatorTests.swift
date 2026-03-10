@@ -154,6 +154,21 @@ struct BoundsCalculatorTests {
         #expect(result.height == 800)
     }
 
+    @Test func targetDisplayWithNegativeY_boundsPositionedCorrectly() {
+        // Taller secondary display in CG coords: top extends above primary
+        let display = makeDisplay(frame: CGRect(x: 1440, y: -180, width: 1920, height: 1080))
+        let window = CGRect(x: 100, y: 100, width: 400, height: 300)
+        let result = BoundsCalculator.calculateNewBounds(window, display)
+
+        // Safe area: x=1460, y=-180+80=-100, w=1880, h=980
+        // Centered: x = 1460 + floor((1880 - 400) / 2) = 1460 + 740 = 2200
+        //           y = -100 + floor((980 - 300) / 2) = -100 + 340 = 240
+        #expect(result.origin.x == 2200)
+        #expect(result.origin.y == 240)
+        #expect(result.width == 400)
+        #expect(result.height == 300)
+    }
+
     @Test func resultValues_areRounded() {
         // Use dimensions that produce fractional intermediate values
         let display = makeDisplay(frame: CGRect(x: 0, y: 0, width: 1441, height: 901))
