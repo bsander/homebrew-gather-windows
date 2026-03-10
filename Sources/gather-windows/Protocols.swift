@@ -17,6 +17,7 @@ protocol WorkspaceProvider: Sendable {
 /// Works at WindowInfo level so AXUIElement never leaks into tests.
 protocol AccessibilityProvider: Sendable {
     func isAccessibilityTrusted() -> Bool
+    func checkAccessibility(prompt: Bool) -> Bool
     func allWindows(forPID pid: pid_t, processName: String) -> [WindowInfo]
     func moveWindow(_ window: WindowInfo, to bounds: CGRect) -> Bool
     func currentBounds(of window: WindowInfo) -> CGRect?
@@ -31,6 +32,21 @@ enum CoordinateConverter {
     static func cocoaToCG(frame: CGRect, primaryScreenHeight: CGFloat) -> CGRect {
         let cgY = primaryScreenHeight - frame.origin.y - frame.height
         return CGRect(x: frame.origin.x, y: cgY, width: frame.width, height: frame.height)
+    }
+
+    /// Match a Cocoa NSScreen frame to a CG-coordinate DisplayInfo by converting first.
+    static func matchScreenToDisplay(
+        screenFrame: CGRect,
+        displays: [DisplayInfo],
+        primaryScreenHeight: CGFloat
+    ) -> DisplayInfo? {
+        let cgFrame = cocoaToCG(frame: screenFrame, primaryScreenHeight: primaryScreenHeight)
+        return displays.first { display in
+            abs(display.frame.origin.x - cgFrame.origin.x) < 1 &&
+            abs(display.frame.origin.y - cgFrame.origin.y) < 1 &&
+            abs(display.frame.width - cgFrame.width) < 1 &&
+            abs(display.frame.height - cgFrame.height) < 1
+        }
     }
 }
 
@@ -61,8 +77,12 @@ struct SystemWorkspaceProvider: WorkspaceProvider {
 
 struct SystemAccessibilityProvider: AccessibilityProvider {
     func isAccessibilityTrusted() -> Bool {
+        AXIsProcessTrusted()
+    }
+
+    func checkAccessibility(prompt: Bool) -> Bool {
         let key = "AXTrustedCheckOptionPrompt" as CFString
-        let options = [key: true] as CFDictionary
+        let options = [key: prompt] as CFDictionary
         return AXIsProcessTrustedWithOptions(options)
     }
 

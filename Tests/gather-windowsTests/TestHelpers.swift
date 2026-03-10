@@ -35,6 +35,10 @@ final class MockAccessibilityProvider: AccessibilityProvider, @unchecked Sendabl
         trusted
     }
 
+    func checkAccessibility(prompt: Bool) -> Bool {
+        trusted
+    }
+
     func allWindows(forPID pid: pid_t, processName: String) -> [WindowInfo] {
         windowsByPID[pid] ?? []
     }
