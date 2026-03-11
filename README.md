@@ -8,6 +8,14 @@ A macOS app that shows numbered overlays on each screen, letting you pick a targ
 
 ### Homebrew (recommended)
 
+**App** (installs to /Applications):
+
+```bash
+brew install --cask bsander/gather-windows/gather-windows
+```
+
+**CLI only**:
+
 ```bash
 brew install bsander/gather-windows/gather-windows
 ```
