@@ -36,12 +36,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let screens = NSScreen.screens
 
         guard displays.count > 1 else {
-            showNotification(
-                title: "Gather Windows",
-                body: "Only one screen detected."
-            )
-            // Quit after a short delay to allow notification to post
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            let screen = screens.first ?? NSScreen.main!
+            let overlay = OverlayWindow(screen: screen, message: "Only one screen detected.")
+            overlay.orderFrontRegardless()
+            overlayWindows.append(overlay)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 NSApp.terminate(nil)
             }
             return

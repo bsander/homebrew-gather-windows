@@ -13,6 +13,29 @@ class OverlayWindow: NSWindow {
             defer: false
         )
 
+        configureWindow(screen: screen)
+
+        let hostingView = NSHostingView(rootView: OverlayView(screenNumber: screenNumber))
+        hostingView.frame = self.contentView?.bounds ?? screen.frame
+        self.contentView = hostingView
+    }
+
+    init(screen: NSScreen, message: String) {
+        super.init(
+            contentRect: screen.frame,
+            styleMask: .borderless,
+            backing: .buffered,
+            defer: false
+        )
+
+        configureWindow(screen: screen)
+
+        let hostingView = NSHostingView(rootView: MessageOverlayView(message: message))
+        hostingView.frame = self.contentView?.bounds ?? screen.frame
+        self.contentView = hostingView
+    }
+
+    private func configureWindow(screen: NSScreen) {
         self.setFrame(screen.frame, display: false)
         self.level = .screenSaver
         self.backgroundColor = .clear
@@ -20,9 +43,5 @@ class OverlayWindow: NSWindow {
         self.hasShadow = false
         self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         self.ignoresMouseEvents = true
-
-        let hostingView = NSHostingView(rootView: OverlayView(screenNumber: screenNumber))
-        hostingView.frame = self.contentView?.bounds ?? screen.frame
-        self.contentView = hostingView
     }
 }

@@ -15,3 +15,21 @@ struct OverlayView: View {
         .ignoresSafeArea()
     }
 }
+
+/// Centered message on semi-transparent dark background
+struct MessageOverlayView: View {
+    let message: String
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.7)
+
+            Text(message)
+                .font(.system(size: 48, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+                .multilineTextAlignment(.center)
+                .padding(40)
+        }
+        .ignoresSafeArea()
+    }
+}
