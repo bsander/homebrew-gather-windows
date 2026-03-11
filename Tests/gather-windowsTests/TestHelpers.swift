@@ -30,6 +30,7 @@ final class MockAccessibilityProvider: AccessibilityProvider, @unchecked Sendabl
     var moveResult: Bool = true
     private(set) var movedWindows: [(window: WindowInfo, bounds: CGRect)] = []
     var postMoveBounds: CGRect?
+    var postMoveBoundsProvider: ((CGRect) -> CGRect?)? = nil
 
     func isAccessibilityTrusted() -> Bool {
         trusted
@@ -49,7 +50,11 @@ final class MockAccessibilityProvider: AccessibilityProvider, @unchecked Sendabl
     }
 
     func currentBounds(of window: WindowInfo) -> CGRect? {
-        postMoveBounds
+        if let provider = postMoveBoundsProvider,
+           let lastMove = movedWindows.last {
+            return provider(lastMove.bounds)
+        }
+        return postMoveBounds
     }
 }
 

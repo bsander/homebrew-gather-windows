@@ -88,6 +88,15 @@ struct WindowManager {
             if moved {
                 movedCount += 1
 
+                // Post-move correction: app may enforce minimum size larger than requested
+                if let actualBounds = accessibility.currentBounds(of: move.window),
+                   actualBounds.size != move.newBounds.size {
+                    let corrected = BoundsCalculator.clampToSafeArea(actualBounds, targetDisplay: targetDisplay)
+                    if corrected != actualBounds {
+                        _ = accessibility.moveWindow(move.window, to: corrected)
+                    }
+                }
+
                 if verbose {
                     if let afterBounds = accessibility.currentBounds(of: move.window) {
                         if DisplayManager.isWithinDisplay(afterBounds, targetDisplay) {
