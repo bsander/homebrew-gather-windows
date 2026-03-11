@@ -5,6 +5,14 @@ enum CLI {
     /// Parse CLI arguments and run gather. Returns exit code.
     @MainActor
     static func run(_ args: [String]) async -> Int32 {
+        // Handle --list flag
+        if args[0] == "--list" {
+            let displayManager = DisplayManager()
+            let allDisplays = displayManager.getAllDisplays()
+            print(formatDisplayList(allDisplays))
+            return 0
+        }
+
         // Parse target screen from first argument
         let targetArg = args[0]
         let targetNumber: Int
@@ -66,15 +74,24 @@ enum CLI {
         return 0
     }
 
+    /// Format display list for --list output
+    static func formatDisplayList(_ displays: [DisplayInfo]) -> String {
+        displays.map { display in
+            let mainTag = display.isMain ? " (main)" : ""
+            return "\(display.index): \(display.name) — \(Int(display.width))x\(Int(display.height))\(mainTag)"
+        }.joined(separator: "\n")
+    }
+
     static func printUsage() {
         let usage = """
-        Usage: gather-windows [<screen-number> | main] [options]
+        Usage: gather-windows [<screen-number> | main | --list] [options]
 
         Arguments:
           <screen-number>       Target screen number (1 = main display)
           main                  Alias for screen 1
 
         Options:
+          --list                List all displays with their numbers
           --verbose, -v         Show detailed logging
           --include-fullscreen  Move fullscreen windows too
           --hide-during-move    Hide windows before moving
