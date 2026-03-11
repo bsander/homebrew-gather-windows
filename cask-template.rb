@@ -13,6 +13,11 @@ cask "gather-windows" do
 
   binary "#{appdir}/Gather Windows.app/Contents/MacOS/Gather Windows", target: "gather-windows"
 
+  postflight do
+    system_command "/usr/bin/xattr",
+                   args: ["-cr", "#{appdir}/Gather Windows.app"]
+  end
+
   zap trash: [
     "~/Library/Preferences/com.vibed.gather-windows.plist",
   ]
