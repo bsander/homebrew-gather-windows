@@ -78,8 +78,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             overlayWindows.append(overlay)
         }
 
-        // Switch to .regular so the app can receive keyboard focus.
-        // Reverted to .accessory in closeOverlays() to hide the Dock icon.
+        // Switch to .regular so the app can receive keyboard focus
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         overlayWindows.first?.makeKeyAndOrderFront(nil)
@@ -110,6 +109,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 let windowManager = WindowManager()
                 let result = await windowManager.moveWindowsToDisplay(
                     targetDisplay,
+                    allDisplays: displays,
                     includeFullscreen: false,
                     hideDuringMove: false
                 )
@@ -126,7 +126,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             window.close()
         }
         overlayWindows.removeAll()
-        NSApp.setActivationPolicy(.accessory)
     }
 
     private func closeOverlaysAndQuit() {

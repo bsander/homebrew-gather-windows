@@ -26,7 +26,7 @@ struct WindowManagerTests {
         ]
         let (wm, _) = makeManager(accessibility: mock)
 
-        let result = await wm.moveWindowsToDisplay(builtIn, includeFullscreen: false, hideDuringMove: false)
+        let result = await wm.moveWindowsToDisplay(builtIn, allDisplays: [builtIn], includeFullscreen: false, hideDuringMove: false)
         #expect(result.movedCount == 0)
         #expect(result.verifiedCount == 0)
     }
@@ -45,7 +45,7 @@ struct WindowManagerTests {
             let workspace = MockWorkspaceProvider(apps: [(pid: 1, name: "App")])
             let wm = WindowManager(workspace: workspace, accessibility: mock)
 
-            let result = await wm.moveWindowsToDisplay(builtIn, includeFullscreen: false, hideDuringMove: false)
+            let result = await wm.moveWindowsToDisplay(builtIn, allDisplays: [builtIn], includeFullscreen: false, hideDuringMove: false)
             #expect(result.movedCount == 0)
             #expect(mock.movedWindows.isEmpty)
         }
@@ -58,7 +58,7 @@ struct WindowManagerTests {
             let workspace = MockWorkspaceProvider(apps: [(pid: 1, name: "App")])
             let wm = WindowManager(workspace: workspace, accessibility: mock)
 
-            let result = await wm.moveWindowsToDisplay(builtIn, includeFullscreen: false, hideDuringMove: false)
+            let result = await wm.moveWindowsToDisplay(builtIn, allDisplays: [builtIn], includeFullscreen: false, hideDuringMove: false)
             #expect(result.movedCount == 0)
         }
 
@@ -70,7 +70,7 @@ struct WindowManagerTests {
             let workspace = MockWorkspaceProvider(apps: [(pid: 1, name: "App")])
             let wm = WindowManager(workspace: workspace, accessibility: mock)
 
-            let result = await wm.moveWindowsToDisplay(builtIn, includeFullscreen: true, hideDuringMove: false)
+            let result = await wm.moveWindowsToDisplay(builtIn, allDisplays: [builtIn], includeFullscreen: true, hideDuringMove: false)
             #expect(result.movedCount == 1)
         }
 
@@ -83,7 +83,7 @@ struct WindowManagerTests {
             let workspace = MockWorkspaceProvider(apps: [(pid: 1, name: "App")])
             let wm = WindowManager(workspace: workspace, accessibility: mock)
 
-            let result = await wm.moveWindowsToDisplay(builtIn, includeFullscreen: false, hideDuringMove: false)
+            let result = await wm.moveWindowsToDisplay(builtIn, allDisplays: [builtIn], includeFullscreen: false, hideDuringMove: false)
             #expect(result.movedCount == 0)
             #expect(mock.movedWindows.isEmpty)
         }
@@ -96,7 +96,7 @@ struct WindowManagerTests {
             let workspace = MockWorkspaceProvider(apps: [(pid: 1, name: "App")])
             let wm = WindowManager(workspace: workspace, accessibility: mock)
 
-            let result = await wm.moveWindowsToDisplay(builtIn, includeFullscreen: false, hideDuringMove: false)
+            let result = await wm.moveWindowsToDisplay(builtIn, allDisplays: [builtIn], includeFullscreen: false, hideDuringMove: false)
             #expect(result.movedCount == 1)
         }
     }
@@ -115,7 +115,7 @@ struct WindowManagerTests {
             let workspace = MockWorkspaceProvider(apps: [(pid: 1, name: "App")])
             let wm = WindowManager(workspace: workspace, accessibility: mock)
 
-            let result = await wm.moveWindowsToDisplay(builtIn, includeFullscreen: false, hideDuringMove: false)
+            let result = await wm.moveWindowsToDisplay(builtIn, allDisplays: [builtIn], includeFullscreen: false, hideDuringMove: false)
             #expect(result.movedCount == 1)
             #expect(result.verifiedCount == 1)
             #expect(mock.movedWindows.count == 1)
@@ -130,7 +130,7 @@ struct WindowManagerTests {
             let workspace = MockWorkspaceProvider(apps: [(pid: 1, name: "App")])
             let wm = WindowManager(workspace: workspace, accessibility: mock)
 
-            let result = await wm.moveWindowsToDisplay(builtIn, includeFullscreen: false, hideDuringMove: false)
+            let result = await wm.moveWindowsToDisplay(builtIn, allDisplays: [builtIn], includeFullscreen: false, hideDuringMove: false)
             #expect(result.movedCount == 2)
             #expect(mock.movedWindows.count == 2)
         }
@@ -145,7 +145,7 @@ struct WindowManagerTests {
             let workspace = MockWorkspaceProvider(apps: [(pid: 1, name: "App")])
             let wm = WindowManager(workspace: workspace, accessibility: mock)
 
-            let result = await wm.moveWindowsToDisplay(builtIn, includeFullscreen: false, hideDuringMove: false)
+            let result = await wm.moveWindowsToDisplay(builtIn, allDisplays: [builtIn], includeFullscreen: false, hideDuringMove: false)
             #expect(result.movedCount == 1)
             #expect(mock.movedWindows.count == 1)
         }
@@ -158,7 +158,7 @@ struct WindowManagerTests {
             let workspace = MockWorkspaceProvider(apps: [(pid: 1, name: "App")])
             let wm = WindowManager(workspace: workspace, accessibility: mock)
 
-            let result = await wm.moveWindowsToDisplay(builtIn, includeFullscreen: false, hideDuringMove: false)
+            let result = await wm.moveWindowsToDisplay(builtIn, allDisplays: [builtIn], includeFullscreen: false, hideDuringMove: false)
             #expect(result.movedCount == 0)
         }
 
@@ -171,7 +171,7 @@ struct WindowManagerTests {
             let workspace = MockWorkspaceProvider(apps: [(pid: 1, name: "App")])
             let wm = WindowManager(workspace: workspace, accessibility: mock)
 
-            let result = await wm.moveWindowsToDisplay(builtIn, includeFullscreen: false, hideDuringMove: false)
+            let result = await wm.moveWindowsToDisplay(builtIn, allDisplays: [builtIn], includeFullscreen: false, hideDuringMove: false)
             #expect(result.movedCount == 0)
         }
     }
@@ -203,7 +203,7 @@ struct WindowManagerTests {
             let workspace = MockWorkspaceProvider(apps: [(pid: 1, name: "App")])
             let wm = WindowManager(workspace: workspace, accessibility: mock)
 
-            let result = await wm.moveWindowsToDisplay(primary, includeFullscreen: false, hideDuringMove: false)
+            let result = await wm.moveWindowsToDisplay(primary, allDisplays: [primary, secondary], includeFullscreen: false, hideDuringMove: false)
             #expect(result.movedCount == 1)
             #expect(mock.movedWindows.count == 1)
             // New bounds should be within primary display area
@@ -222,7 +222,7 @@ struct WindowManagerTests {
             let workspace = MockWorkspaceProvider(apps: [(pid: 1, name: "App")])
             let wm = WindowManager(workspace: workspace, accessibility: mock)
 
-            let result = await wm.moveWindowsToDisplay(secondary, includeFullscreen: false, hideDuringMove: false)
+            let result = await wm.moveWindowsToDisplay(secondary, allDisplays: [primary, secondary], includeFullscreen: false, hideDuringMove: false)
             #expect(result.movedCount == 1)
             #expect(mock.movedWindows.count == 1)
             // New bounds should be within secondary display area (CG coords)
@@ -242,7 +242,7 @@ struct WindowManagerTests {
             let workspace = MockWorkspaceProvider(apps: [(pid: 1, name: "App")])
             let wm = WindowManager(workspace: workspace, accessibility: mock)
 
-            let result = await wm.moveWindowsToDisplay(secondary, includeFullscreen: false, hideDuringMove: false)
+            let result = await wm.moveWindowsToDisplay(secondary, allDisplays: [primary, secondary], includeFullscreen: false, hideDuringMove: false)
             #expect(result.movedCount == 0)
             #expect(mock.movedWindows.isEmpty)
         }
@@ -258,9 +258,9 @@ struct WindowManagerTests {
         let workspace = MockWorkspaceProvider(apps: [(pid: 1, name: "App")])
         let wm = WindowManager(workspace: workspace, accessibility: mock)
 
-        _ = await wm.moveWindowsToDisplay(builtIn, includeFullscreen: false, hideDuringMove: false)
+        _ = await wm.moveWindowsToDisplay(builtIn, allDisplays: [builtIn], includeFullscreen: false, hideDuringMove: false)
 
-        let expectedBounds = BoundsCalculator.calculateNewBounds(windowBounds, builtIn)
+        let expectedBounds = BoundsCalculator.calculateNewBounds(windowBounds, sourceDisplay: builtIn, targetDisplay: builtIn)
         #expect(mock.movedWindows.count == 1)
         #expect(mock.movedWindows[0].bounds == expectedBounds)
     }

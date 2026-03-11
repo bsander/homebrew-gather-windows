@@ -56,6 +56,16 @@ struct DisplayManager {
         return !fullyWithin
     }
 
+    /// Find which display contains the center point of a window
+    static func displayContaining(_ windowBounds: CGRect, allDisplays: [DisplayInfo]) -> DisplayInfo? {
+        let centerX = windowBounds.origin.x + windowBounds.width / 2
+        let centerY = windowBounds.origin.y + windowBounds.height / 2
+        return allDisplays.first { display in
+            centerX >= display.x && centerX < display.x + display.width &&
+            centerY >= display.y && centerY < display.y + display.height
+        }
+    }
+
     /// Check if window is within display bounds (JXA lines 316-328)
     static func isWithinDisplay(_ bounds: CGRect, _ display: DisplayInfo) -> Bool {
         let margin = Constants.verificationMargin

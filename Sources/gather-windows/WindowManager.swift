@@ -18,6 +18,7 @@ struct WindowManager {
     @MainActor
     func moveWindowsToDisplay(
         _ targetDisplay: DisplayInfo,
+        allDisplays: [DisplayInfo],
         includeFullscreen: Bool,
         hideDuringMove: Bool
     ) async -> MoveResult {
@@ -53,9 +54,11 @@ struct WindowManager {
                 // Check if window is on external display (JXA lines 214)
                 if DisplayManager.isOnExternalDisplay(windowInfo.bounds, targetDisplay) {
                     let displayLocation = getDisplayLocation(windowInfo.bounds, targetDisplay)
+                    let sourceDisplay = DisplayManager.displayContaining(windowInfo.bounds, allDisplays: allDisplays) ?? targetDisplay
                     let newBounds = BoundsCalculator.calculateNewBounds(
                         windowInfo.bounds,
-                        targetDisplay
+                        sourceDisplay: sourceDisplay,
+                        targetDisplay: targetDisplay
                     )
 
                     windowsToMove.append(WindowMove(

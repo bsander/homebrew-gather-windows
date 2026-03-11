@@ -2,52 +2,56 @@ import Foundation
 import CoreGraphics
 
 /// Calculates new window bounds for moving to target display
-/// CRITICAL: This implements JXA lines 377-433 EXACTLY
 class BoundsCalculator {
-    /// Calculate new bounds for window moving to target display
-    /// Preserves aspect ratio, centers window, and clamps to safe area
-    /// JXA lines 377-433
+    /// Calculate new bounds for window moving from source to target display.
+    /// Maps the window's relative position and size proportionally.
+    /// Clamps to target safe area so windows never end up off-screen.
     static func calculateNewBounds(
         _ windowBounds: CGRect,
-        _ targetDisplay: DisplayInfo
+        sourceDisplay: DisplayInfo,
+        targetDisplay: DisplayInfo
     ) -> CGRect {
-        // Account for macOS menu bar (typically ~25px) and dock
-        // Lines 379-381 - MUST match JXA exactly
-        let topMargin = Constants.topMargin      // 80 - Extra space for menu bar
-        let sideMargin = Constants.sideMargin    // 20 - Smaller side margins
-        let bottomMargin = Constants.bottomMargin // 20
+        // Compute relative position and size against source display frame
+        let relX = (windowBounds.origin.x - sourceDisplay.x) / sourceDisplay.width
+        let relY = (windowBounds.origin.y - sourceDisplay.y) / sourceDisplay.height
+        let relW = windowBounds.width / sourceDisplay.width
+        let relH = windowBounds.height / sourceDisplay.height
 
-        var newWidth = windowBounds.width
-        var newHeight = windowBounds.height
+        // Map to target display frame
+        var newX = targetDisplay.x + relX * targetDisplay.width
+        var newY = targetDisplay.y + relY * targetDisplay.height
+        var newWidth = relW * targetDisplay.width
+        var newHeight = relH * targetDisplay.height
 
-        // Calculate safe area within target display (lines 387-392)
-        let safeArea = CGRect(
-            x: targetDisplay.x + sideMargin,
-            y: targetDisplay.y + topMargin,  // Account for menu bar
-            width: targetDisplay.width - (sideMargin * 2),
-            height: targetDisplay.height - topMargin - bottomMargin
-        )
+        // Round all values (accessibility API needs integers)
+        newX = newX.rounded()
+        newY = newY.rounded()
+        newWidth = newWidth.rounded()
+        newHeight = newHeight.rounded()
 
-        // Resize if window is too large, maintaining aspect ratio (lines 395-402)
-        if newWidth > safeArea.width || newHeight > safeArea.height {
-            // Calculate scale to fit, preserving aspect ratio
-            let scaleWidth = safeArea.width / newWidth
-            let scaleHeight = safeArea.height / newHeight
-            let scale = min(scaleWidth, scaleHeight)
+        let unclamped = CGRect(x: newX, y: newY, width: newWidth, height: newHeight)
+        return clampToSafeArea(unclamped, targetDisplay: targetDisplay)
+    }
 
-            newWidth = floor(windowBounds.width * scale)
-            newHeight = floor(windowBounds.height * scale)
-        }
+    /// Clamp bounds to the safe area of the target display.
+    /// Used both during initial calculation and for post-move correction
+    /// when an app enforces a minimum size larger than requested.
+    static func clampToSafeArea(_ bounds: CGRect, targetDisplay: DisplayInfo) -> CGRect {
+        let topMargin = Constants.topMargin
+        let sideMargin = Constants.sideMargin
+        let bottomMargin = Constants.bottomMargin
 
-        // Calculate position - center in safe area (lines 405-407)
-        var newX = safeArea.origin.x + floor((safeArea.width - newWidth) / 2)
-        var newY = safeArea.origin.y + floor((safeArea.height - newHeight) / 2)
+        let safeWidth = targetDisplay.width - (sideMargin * 2)
+        let safeHeight = targetDisplay.height - topMargin - bottomMargin
 
-        // Final safety check - ensure completely within bounds (lines 410-411)
+        let newWidth = min(bounds.width, safeWidth)
+        let newHeight = min(bounds.height, safeHeight)
+        var newX = bounds.origin.x
+        var newY = bounds.origin.y
+
         let maxX = targetDisplay.x + targetDisplay.width - sideMargin
         let maxY = targetDisplay.y + targetDisplay.height - bottomMargin
 
-        // Clamp to safe bounds (lines 414-425)
         if newX + newWidth > maxX {
             newX = maxX - newWidth
         }
@@ -61,12 +65,6 @@ class BoundsCalculator {
             newY = targetDisplay.y + topMargin
         }
 
-        // Return rounded values (lines 427-432)
-        return CGRect(
-            x: newX.rounded(),
-            y: newY.rounded(),
-            width: newWidth.rounded(),
-            height: newHeight.rounded()
-        )
+        return CGRect(x: newX, y: newY, width: newWidth, height: newHeight)
     }
 }

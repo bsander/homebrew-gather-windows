@@ -215,6 +215,40 @@ struct DisplayManagerTests {
         }
     }
 
+    // MARK: - displayContaining
+
+    @Suite("displayContaining")
+    struct DisplayContainingTests {
+        let display1 = makeDisplay(index: 1, frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true, name: "Main Display")
+        let display2 = makeDisplay(index: 2, frame: CGRect(x: 1440, y: -180, width: 1920, height: 1080), isMain: false, name: "Display 2")
+
+        @Test func windowOnDisplay1_returnsDisplay1() {
+            let window = CGRect(x: 100, y: 100, width: 400, height: 300)
+            let result = DisplayManager.displayContaining(window, allDisplays: [display1, display2])
+            #expect(result?.index == 1)
+        }
+
+        @Test func windowOnDisplay2_returnsDisplay2() {
+            let window = CGRect(x: 1600, y: -50, width: 500, height: 300)
+            let result = DisplayManager.displayContaining(window, allDisplays: [display1, display2])
+            #expect(result?.index == 2)
+        }
+
+        @Test func windowSpanningDisplays_usesCenter() {
+            // Window spans from display1 into display2, but center is on display2
+            let window = CGRect(x: 1400, y: 100, width: 400, height: 300)
+            // Center: (1600, 250) — within display2 (1440..<3360, -180..<900)
+            let result = DisplayManager.displayContaining(window, allDisplays: [display1, display2])
+            #expect(result?.index == 2)
+        }
+
+        @Test func windowOffScreen_returnsNil() {
+            let window = CGRect(x: 5000, y: 5000, width: 400, height: 300)
+            let result = DisplayManager.displayContaining(window, allDisplays: [display1, display2])
+            #expect(result == nil)
+        }
+    }
+
     // MARK: - isWithinDisplay
 
     @Suite("isWithinDisplay")

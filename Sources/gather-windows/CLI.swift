@@ -55,6 +55,7 @@ enum CLI {
         let windowManager = WindowManager()
         let result = await windowManager.moveWindowsToDisplay(
             targetDisplay,
+            allDisplays: allDisplays,
             includeFullscreen: includeFullscreen,
             hideDuringMove: hideDuringMove
         )
