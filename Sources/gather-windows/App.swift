@@ -40,7 +40,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let overlay = OverlayWindow(screen: screen, message: "Only one screen detected.")
             overlay.orderFrontRegardless()
             overlayWindows.append(overlay)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 NSApp.terminate(nil)
             }
             return
