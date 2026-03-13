@@ -53,7 +53,14 @@ icon: ## Regenerate AppIcon.icns from appicon.png
 	iconutil -c icns AppIcon.iconset -o AppIcon.icns
 	rm -rf AppIcon.iconset
 	sips -z 128 128 assets/appicon.png --out assets/appicon-128.png >/dev/null 2>&1
-	@echo "AppIcon.icns and assets/appicon-128.png regenerated from appicon.png"
+	magick assets/appicon-128.png \
+		\( +clone -alpha extract \
+		-draw "fill black polygon 0,0 0,28 28,0 fill white circle 28,28 28,0" \
+		-draw "fill black polygon 100,0 128,0 128,28 fill white circle 100,28 100,0" \
+		-draw "fill black polygon 0,100 0,128 28,128 fill white circle 28,100 28,128" \
+		-draw "fill black polygon 100,128 128,128 128,100 fill white circle 100,100 100,128" \
+		\) -alpha off -compose CopyOpacity -composite assets/appicon-128-rounded.png
+	@echo "AppIcon.icns, assets/appicon-128.png, and assets/appicon-128-rounded.png regenerated from appicon.png"
 
 setup-codesign: ## Create self-signed cert for persistent TCC permissions
 	@bash scripts/create-codesign-cert.sh "$(CODESIGN_IDENTITY)"

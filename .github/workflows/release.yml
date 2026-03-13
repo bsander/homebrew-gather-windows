@@ -87,11 +87,13 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           NOTICE='> **Note:** This is the Homebrew tap branch. Source code and development happens on the [`main` branch](https://github.com/${{ github.repository }}/tree/main).\n'
           printf '%b\n%s\n' "$NOTICE" "$(cat "$GITHUB_WORKSPACE/README.md")" > README.md
+          mkdir -p assets
+          cp "$GITHUB_WORKSPACE/assets/appicon-128-rounded.png" assets/
           APP_SHA256=$(shasum -a 256 "$GITHUB_WORKSPACE/Gather-Windows-${TAG}.zip" | awk '{print $1}')
           APP_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/Gather-Windows-${TAG}.zip"
           mkdir -p Casks
           HOMEPAGE="https://github.com/${{ github.repository }}"
           sed "s|VERSION_PH|${VERSION}|;s|SHA256_PH|${APP_SHA256}|;s|URL_PH|${APP_URL}|;s|HOMEPAGE_PH|${HOMEPAGE}|" "$GITHUB_WORKSPACE/cask-template.rb" > Casks/gather-windows.rb
-          git add Formula/gather-windows.rb Casks/gather-windows.rb README.md
+          git add Formula/gather-windows.rb Casks/gather-windows.rb README.md assets/appicon-128-rounded.png
           git commit -m "Update formula and cask for ${TAG}"
           git push origin brew

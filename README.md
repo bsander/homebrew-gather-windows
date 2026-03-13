@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/appicon-128.png" width="128" height="128">
+  <img src="assets/appicon-128-rounded.png" width="128" height="128">
 </p>
 
 # Gather Windows
