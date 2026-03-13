@@ -17,7 +17,8 @@ let package = Package(
             name: "gather-windows",
             path: "Sources/gather-windows",
             swiftSettings: [
-                .unsafeFlags(["-parse-as-library"])
+                .unsafeFlags(["-parse-as-library"]),
+                .define("VERBOSE_LOGGING", .when(configuration: .debug)),
             ]
         ),
         .testTarget(

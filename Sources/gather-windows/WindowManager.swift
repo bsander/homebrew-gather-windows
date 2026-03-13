@@ -91,16 +91,23 @@ struct WindowManager {
                 // Post-move correction: app may enforce minimum size larger than requested
                 if let actualBounds = accessibility.currentBounds(of: move.window),
                    actualBounds.size != move.newBounds.size {
+                    logVerbose("  Post-move size mismatch for \(move.window.title):")
+                    logVerbose("    Requested: \(formatBounds(move.newBounds))")
+                    logVerbose("    Actual:    \(formatBounds(actualBounds))")
                     let corrected = BoundsCalculator.clampToSafeArea(actualBounds, targetDisplay: targetDisplay)
                     if corrected != actualBounds {
+                        logVerbose("    Corrected: \(formatBounds(corrected))")
                         _ = accessibility.moveWindow(move.window, to: corrected)
                     }
                 }
 
                 if verbose {
                     if let afterBounds = accessibility.currentBounds(of: move.window) {
+                        logVerbose("  [\(move.window.processName)] \"\(move.window.title)\" final: \(formatBounds(afterBounds))")
                         if DisplayManager.isWithinDisplay(afterBounds, targetDisplay) {
                             verifiedCount += 1
+                        } else {
+                            logVerbose("    WARNING: window not within target display bounds")
                         }
                     }
                 }

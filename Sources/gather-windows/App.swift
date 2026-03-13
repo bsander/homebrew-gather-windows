@@ -18,6 +18,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let args = Array(CommandLine.arguments.dropFirst()) // drop executable path
+        logVerbose("Launch: args=\(args)")
 
         if args.isEmpty {
             startOverlayMode()
@@ -34,6 +35,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let displayManager = DisplayManager()
         let displays = displayManager.getAllDisplays()
         let screens = NSScreen.screens
+
+        logVerbose("Overlay mode: \(displays.count) display(s), \(screens.count) screen(s)")
 
         guard displays.count > 1 else {
             let screen = screens.first ?? NSScreen.main!
@@ -96,6 +99,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func handleScreenSelection(_ number: Int, displays: [DisplayInfo]) {
+        logVerbose("Screen selected: \(number)")
         guard let targetDisplay = displays.first(where: { $0.index == number }) else { return }
 
         // Defer to next run loop iteration so the NSEvent monitor callback
@@ -112,6 +116,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     includeFullscreen: false,
                     hideDuringMove: false
                 )
+                logVerbose("Gather result: moved=\(result.movedCount) verified=\(result.verifiedCount)")
                 log("Moved \(result.movedCount) window(s) to \(targetDisplay.name)")
                 NSApp.terminate(nil)
             }
