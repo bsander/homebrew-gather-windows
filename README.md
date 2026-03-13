@@ -1,6 +1,10 @@
-# gather-windows
+<p align="center">
+  <img src="assets/appicon-128.png" width="128" height="128">
+</p>
 
-A macOS app that shows numbered overlays on each screen, letting you pick a target display to gather all windows to. Also supports CLI mode when invoked with arguments.
+# Gather Windows
+
+Gather all your windows onto a single display instantly.
 
 ## Installation
 
