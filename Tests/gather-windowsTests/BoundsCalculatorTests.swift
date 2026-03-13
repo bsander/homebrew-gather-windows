@@ -4,46 +4,71 @@ import CoreGraphics
 
 @Suite("BoundsCalculator")
 struct BoundsCalculatorTests {
-    // Two displays for testing
+    // Same aspect ratio displays (1.6:1) — visibleFrame = frame (no insets)
     let builtIn = makeDisplay(frame: CGRect(x: 0, y: 0, width: 1440, height: 900))
     let external = makeDisplay(index: 2, frame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), isMain: false, name: "External")
 
-    // MARK: - Proportional position mapping
+    // Different aspect ratio displays (user's real setup) with realistic visibleFrames
+    let mainDisplay = makeDisplay(
+        frame: CGRect(x: 0, y: 0, width: 1800, height: 1169),
+        visibleFrame: CGRect(x: 0, y: 38, width: 1800, height: 1131)
+    )
+    let wideDisplay = makeDisplay(
+        index: 2,
+        frame: CGRect(x: -1089, y: -1600, width: 3840, height: 1600),
+        visibleFrame: CGRect(x: -1089, y: -1562, width: 3840, height: 1562),
+        isMain: false, name: "Wide"
+    )
 
-    @Test func windowPosition_mappedProportionally() {
-        // Window at (200, 100) on a 1920x1080 display → relative (200/1920, 100/1080)
-        // Mapped to 1440x900: (150, 83)
+    // MARK: - Uniform scaling (aspect-ratio preserving)
+
+    @Test func uniformScale_preservesWindowAspectRatio() {
+        let window = CGRect(x: 225, y: 40, width: 1350, height: 1129)
+        let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: mainDisplay, targetDisplay: wideDisplay)
+
+        #expect(result.width < 2000)
+    }
+
+    @Test func uniformScale_sameAspectRatio_matchesProportional() {
+        let large = makeDisplay(index: 2, frame: CGRect(x: 1440, y: 0, width: 2880, height: 1800), isMain: false, name: "Large")
+        let window = CGRect(x: 200, y: 200, width: 400, height: 300)
+        let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: builtIn, targetDisplay: large)
+
+        #expect(result.width == 800)
+        #expect(result.height == 600)
+    }
+
+    @Test func uniformScale_widthConstrained() {
         let window = CGRect(x: 1440 + 200, y: 100, width: 400, height: 300)
         let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: external, targetDisplay: builtIn)
 
-        // relX = 200/1920 ≈ 0.1042, newX = 0 + 0.1042 * 1440 = 150
-        // relY = 100/1080 ≈ 0.0926, newY = 0 + 0.0926 * 900 = 83
-        #expect(result.origin.x == 150)
-        #expect(result.origin.y == 83)
+        #expect(result.width == 300)  // 400 * 0.75
+        #expect(result.height == 225) // 300 * 0.75
     }
 
-    @Test func windowSize_scaledProportionally() {
-        // 400x300 on 1920x1080 → relW=400/1920, relH=300/1080
-        // On 1440x900: w = 300, h = 250
-        let window = CGRect(x: 1440 + 200, y: 100, width: 400, height: 300)
-        let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: external, targetDisplay: builtIn)
+    @Test func uniformScale_heightConstrained() {
+        let window = CGRect(x: 200, y: 200, width: 400, height: 300)
+        let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: mainDisplay, targetDisplay: wideDisplay)
 
-        #expect(result.width == 300)
-        #expect(result.height == 250)
+        let scale = min(wideDisplay.width / mainDisplay.width, wideDisplay.height / mainDisplay.height)
+        let expectedW = (400.0 * scale).rounded()
+        let expectedH = (300.0 * scale).rounded()
+        #expect(result.width == expectedW)
+        #expect(result.height == expectedH)
     }
 
-    @Test func windowAtOrigin_staysAtOriginRegion() {
-        // Window at source display origin
-        let window = CGRect(x: 1440, y: 0, width: 400, height: 300)
-        let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: external, targetDisplay: builtIn)
+    // MARK: - Aspect-matched region positioning
 
-        // relX=0, relY=0 → newX=0, newY=0, but clamped to safe area
-        #expect(result.origin.x == Constants.sideMargin) // 20
-        #expect(result.origin.y == Constants.topMargin)   // 80
+    @Test func position_centeredInAspectMatchedRegion() {
+        let window = CGRect(x: 200, y: 200, width: 400, height: 300)
+        let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: mainDisplay, targetDisplay: wideDisplay)
+
+        let targetCenter = wideDisplay.x + wideDisplay.width / 2
+        #expect(result.origin.x > wideDisplay.x + 500)
+        #expect(result.origin.x < targetCenter)
     }
 
     @Test func sameSourceAndTarget_preservesPosition() {
-        // Moving window to the same display should keep it roughly in place
         let window = CGRect(x: 200, y: 200, width: 400, height: 300)
         let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: builtIn, targetDisplay: builtIn)
 
@@ -53,38 +78,116 @@ struct BoundsCalculatorTests {
         #expect(result.height == 300)
     }
 
+    // MARK: - Snap-to-edge detection
+
+    @Test func snappedToLeftEdge_staysOnLeftEdge() {
+        let window = CGRect(x: 0, y: 200, width: 800, height: 600)
+        let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: mainDisplay, targetDisplay: wideDisplay)
+
+        #expect(result.origin.x == wideDisplay.visibleFrame.origin.x)
+    }
+
+    @Test func snappedToRightEdge_staysOnRightEdge() {
+        let window = CGRect(x: 1000, y: 200, width: 800, height: 600)
+        let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: mainDisplay, targetDisplay: wideDisplay)
+
+        let maxX = wideDisplay.visibleFrame.origin.x + wideDisplay.visibleFrame.width
+        #expect(result.origin.x + result.width == maxX)
+    }
+
+    @Test func snappedToTopEdge_staysOnTopEdge() {
+        let window = CGRect(x: 200, y: 0, width: 800, height: 600)
+        let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: mainDisplay, targetDisplay: wideDisplay)
+
+        #expect(result.origin.y == wideDisplay.visibleFrame.origin.y)
+    }
+
+    @Test func snappedToBottomEdge_staysOnBottomEdge() {
+        let window = CGRect(x: 200, y: 569, width: 800, height: 600)
+        let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: mainDisplay, targetDisplay: wideDisplay)
+
+        let maxY = wideDisplay.visibleFrame.origin.y + wideDisplay.visibleFrame.height
+        #expect(result.origin.y + result.height == maxY)
+    }
+
+    @Test func notSnapped_positionedInRegion() {
+        let window = CGRect(x: 200, y: 200, width: 400, height: 300)
+        let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: mainDisplay, targetDisplay: wideDisplay)
+
+        #expect(result.origin.x > wideDisplay.visibleFrame.origin.x + 100)
+        let maxX = wideDisplay.visibleFrame.origin.x + wideDisplay.visibleFrame.width
+        #expect(result.origin.x + result.width < maxX - 100)
+    }
+
+    @Test func snappedLeftAndTop_cornerSnap() {
+        let window = CGRect(x: 0, y: 0, width: 800, height: 600)
+        let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: mainDisplay, targetDisplay: wideDisplay)
+
+        #expect(result.origin.x == wideDisplay.visibleFrame.origin.x)
+        #expect(result.origin.y == wideDisplay.visibleFrame.origin.y)
+    }
+
+    @Test func fullHeight_fillsTargetSafeHeight() {
+        // Window spanning full height of source (menu bar to bottom edge)
+        // y=40 is within source topInset (38) + tolerance, bottom gap = 0
+        // NOT all 4 edges (left offset = 200, not snapped)
+        let window = CGRect(x: 200, y: 40, width: 800, height: 1129)
+        let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: mainDisplay, targetDisplay: wideDisplay)
+
+        #expect(result.height == wideDisplay.visibleFrame.height)
+        #expect(result.origin.y == wideDisplay.visibleFrame.origin.y)
+    }
+
+    @Test func fullWidth_fillsTargetSafeWidth() {
+        // Window spanning full width of source (not top/bottom snapped)
+        let window = CGRect(x: 0, y: 200, width: 1800, height: 600)
+        let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: mainDisplay, targetDisplay: wideDisplay)
+
+        #expect(result.width == wideDisplay.visibleFrame.width)
+        #expect(result.origin.x == wideDisplay.visibleFrame.origin.x)
+    }
+
+    @Test func maximized_usesProportionalScaling() {
+        // Window snapped to all 4 edges (maximized) should NOT fill target safe area
+        // Instead uses proportional scaling like a regular window
+        let window = CGRect(x: 0, y: 38, width: 1800, height: 1131)
+        let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: mainDisplay, targetDisplay: wideDisplay)
+
+        // Should NOT fill target safe area
+        #expect(result.width < wideDisplay.visibleFrame.width)
+        // Should be uniformly scaled
+        let scale = min(wideDisplay.width / mainDisplay.width, wideDisplay.height / mainDisplay.height)
+        let expectedW = (1800.0 * scale).rounded()
+        let expectedH = (1131.0 * scale).rounded()
+        #expect(result.width == expectedW)
+        #expect(result.height == expectedH)
+    }
+
     // MARK: - Clamping to safe area
 
     @Test func windowTooWide_clampedToSafeArea() {
-        // Window that would be too wide after proportional scaling
-        // 1800/1920 * 1440 = 1350 — fits in safe area (1400)
-        // But a window nearly full-width on source: 1900/1920 * 1440 = 1425 > 1400
         let window = CGRect(x: 1440 + 10, y: 100, width: 1900, height: 300)
         let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: external, targetDisplay: builtIn)
 
-        let safeWidth = builtIn.width - Constants.sideMargin * 2  // 1400
-        #expect(result.width <= safeWidth)
+        #expect(result.width <= builtIn.visibleFrame.width)
     }
 
     @Test func windowTooTall_clampedToSafeArea() {
         let window = CGRect(x: 1440 + 100, y: 10, width: 400, height: 1070)
         let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: external, targetDisplay: builtIn)
 
-        let safeHeight = builtIn.height - Constants.topMargin - Constants.bottomMargin  // 800
-        #expect(result.height <= safeHeight)
+        #expect(result.height <= builtIn.visibleFrame.height)
     }
 
     @Test func windowPosition_clampedWithinSafeArea() {
-        // Window near bottom-right of source → after mapping, should stay in safe area
         let window = CGRect(x: 1440 + 1500, y: 800, width: 400, height: 300)
         let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: external, targetDisplay: builtIn)
 
-        let maxX = builtIn.x + builtIn.width - Constants.sideMargin
-        let maxY = builtIn.y + builtIn.height - Constants.bottomMargin
-        #expect(result.origin.x + result.width <= maxX)
-        #expect(result.origin.y + result.height <= maxY)
-        #expect(result.origin.x >= builtIn.x + Constants.sideMargin)
-        #expect(result.origin.y >= builtIn.y + Constants.topMargin)
+        let safe = builtIn.visibleFrame
+        #expect(result.origin.x + result.width <= safe.origin.x + safe.width)
+        #expect(result.origin.y + result.height <= safe.origin.y + safe.height)
+        #expect(result.origin.x >= safe.origin.x)
+        #expect(result.origin.y >= safe.origin.y)
     }
 
     // MARK: - Different display configurations
@@ -94,9 +197,8 @@ struct BoundsCalculatorTests {
         let window = CGRect(x: 500, y: 100, width: 400, height: 300)
         let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: builtIn, targetDisplay: leftDisplay)
 
-        // Position should be within left display bounds
-        #expect(result.origin.x >= -1920 + Constants.sideMargin)
-        #expect(result.origin.x + result.width <= 0 - Constants.sideMargin)
+        #expect(result.origin.x >= -1920)
+        #expect(result.origin.x + result.width <= 0)
     }
 
     @Test func targetDisplayWithPositiveOrigin_boundsOffsetCorrectly() {
@@ -104,7 +206,7 @@ struct BoundsCalculatorTests {
         let window = CGRect(x: 100, y: 100, width: 400, height: 300)
         let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: builtIn, targetDisplay: rightDisplay)
 
-        #expect(result.origin.x >= 1440 + Constants.sideMargin)
+        #expect(result.origin.x >= 1440)
     }
 
     @Test func targetDisplayWithNegativeY_boundsPositionedCorrectly() {
@@ -112,18 +214,16 @@ struct BoundsCalculatorTests {
         let window = CGRect(x: 100, y: 100, width: 400, height: 300)
         let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: builtIn, targetDisplay: display)
 
-        #expect(result.origin.y >= -180 + Constants.topMargin)
+        #expect(result.origin.y >= -180)
     }
 
-    // MARK: - Scaling between different-sized displays
+    // MARK: - Scaling direction
 
     @Test func smallToLargeDisplay_windowScalesUp() {
-        // 400x300 on 1440x900 → relW=400/1440, relH=300/900
-        // On 1920x1080: w=533, h=360
         let window = CGRect(x: 200, y: 200, width: 400, height: 300)
         let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: builtIn, targetDisplay: external)
 
-        #expect(result.width > 400)  // Should scale up
+        #expect(result.width > 400)
         #expect(result.height > 300)
     }
 
@@ -131,7 +231,7 @@ struct BoundsCalculatorTests {
         let window = CGRect(x: 1440 + 200, y: 200, width: 800, height: 600)
         let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: external, targetDisplay: builtIn)
 
-        #expect(result.width < 800)  // Should scale down
+        #expect(result.width < 800)
         #expect(result.height < 600)
     }
 
@@ -157,28 +257,25 @@ struct BoundsCalculatorTests {
     }
 
     @Test func clampToSafeArea_windowExceedsRightEdge_positionShifted() {
-        // Window right edge at 1500, max is 1440 - 20 = 1420
         let bounds = CGRect(x: 900, y: 100, width: 600, height: 300)
         let result = BoundsCalculator.clampToSafeArea(bounds, targetDisplay: builtIn)
-        let maxX = builtIn.x + builtIn.width - Constants.sideMargin
+        let maxX = builtIn.visibleFrame.origin.x + builtIn.visibleFrame.width
         #expect(result.origin.x + result.width <= maxX)
-        #expect(result.width == 600) // width unchanged, only position shifts
+        #expect(result.width == 600)
     }
 
     @Test func clampToSafeArea_windowExceedsBottomEdge_positionShifted() {
         let bounds = CGRect(x: 100, y: 600, width: 400, height: 400)
         let result = BoundsCalculator.clampToSafeArea(bounds, targetDisplay: builtIn)
-        let maxY = builtIn.y + builtIn.height - Constants.bottomMargin
+        let maxY = builtIn.visibleFrame.origin.y + builtIn.visibleFrame.height
         #expect(result.origin.y + result.height <= maxY)
     }
 
     @Test func clampToSafeArea_windowTooWide_sizeAndPositionClamped() {
-        // Width exceeds safe area (1440 - 40 = 1400)
         let bounds = CGRect(x: 100, y: 100, width: 1500, height: 300)
         let result = BoundsCalculator.clampToSafeArea(bounds, targetDisplay: builtIn)
-        let safeWidth = builtIn.width - Constants.sideMargin * 2
-        #expect(result.width == safeWidth)
-        #expect(result.origin.x >= builtIn.x + Constants.sideMargin)
+        #expect(result.width == builtIn.visibleFrame.width)
+        #expect(result.origin.x >= builtIn.visibleFrame.origin.x)
     }
 
     // MARK: - Edge cases
@@ -192,13 +289,62 @@ struct BoundsCalculatorTests {
     }
 
     @Test func windowExactlySafeAreaSize_clampedCorrectly() {
-        // Full-size window on source
         let window = CGRect(x: 1440, y: 0, width: 1920, height: 1080)
         let result = BoundsCalculator.calculateNewBounds(window, sourceDisplay: external, targetDisplay: builtIn)
 
-        let safeWidth = builtIn.width - Constants.sideMargin * 2
-        let safeHeight = builtIn.height - Constants.topMargin - Constants.bottomMargin
-        #expect(result.width <= safeWidth)
-        #expect(result.height <= safeHeight)
+        #expect(result.width <= builtIn.visibleFrame.width)
+        #expect(result.height <= builtIn.visibleFrame.height)
+    }
+
+    // MARK: - Real-world snap with visibleFrame insets
+
+    @Test func calendarSnap_topRightBottom_noArtificialMargins() {
+        // Calendar on source: snapped top+right+bottom (not left)
+        // Source: external display 1800x1169, menu bar at 38px
+        let source = makeDisplay(
+            frame: CGRect(x: 0, y: 0, width: 1800, height: 1169),
+            visibleFrame: CGRect(x: 0, y: 38, width: 1800, height: 1131)
+        )
+        // Target: built-in 3840x1600, menu bar at 38px
+        let target = makeDisplay(
+            index: 2,
+            frame: CGRect(x: -1089, y: -1600, width: 3840, height: 1600),
+            visibleFrame: CGRect(x: -1089, y: -1562, width: 3840, height: 1562),
+            isMain: false, name: "Built-in"
+        )
+        let calendar = CGRect(x: 675, y: 40, width: 1125, height: 1129)
+        let result = BoundsCalculator.calculateNewBounds(calendar, sourceDisplay: source, targetDisplay: target)
+
+        // Should snap to target's actual right edge (no artificial 20px margin)
+        let targetRight = target.visibleFrame.origin.x + target.visibleFrame.width
+        #expect(result.origin.x + result.width == targetRight)
+        // Should snap to target's actual top (visibleFrame top, not frame top - 80)
+        #expect(result.origin.y == target.visibleFrame.origin.y)
+        // Should snap to target's actual bottom
+        let targetBottom = target.visibleFrame.origin.y + target.visibleFrame.height
+        #expect(result.origin.y + result.height == targetBottom)
+    }
+
+    @Test func fastmailMaximized_proportionalNotFillTarget() {
+        // Fastmail on source: snapped all 4 edges (maximized)
+        let source = makeDisplay(
+            frame: CGRect(x: 0, y: 0, width: 1800, height: 1169),
+            visibleFrame: CGRect(x: 0, y: 38, width: 1800, height: 1131)
+        )
+        let target = makeDisplay(
+            index: 2,
+            frame: CGRect(x: -1089, y: -1600, width: 3840, height: 1600),
+            visibleFrame: CGRect(x: -1089, y: -1562, width: 3840, height: 1562),
+            isMain: false, name: "Built-in"
+        )
+        let fastmail = CGRect(x: 0, y: 38, width: 1800, height: 1131)
+        let result = BoundsCalculator.calculateNewBounds(fastmail, sourceDisplay: source, targetDisplay: target)
+
+        // Should NOT fill entire target safe area (3840x1562)
+        #expect(result.width < target.visibleFrame.width)
+        // Should be proportionally scaled
+        let scale = min(target.width / source.width, target.height / source.height)
+        let expectedW = (1800.0 * scale).rounded()
+        #expect(result.width == expectedW)
     }
 }

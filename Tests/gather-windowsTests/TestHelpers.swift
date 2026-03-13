@@ -5,9 +5,9 @@ import Testing
 // MARK: - Mock ScreenProvider
 
 struct MockScreenProvider: ScreenProvider {
-    let mockScreens: [(frame: CGRect, isMain: Bool)]
+    let mockScreens: [(frame: CGRect, visibleFrame: CGRect, isMain: Bool)]
 
-    func screens() -> [(frame: CGRect, isMain: Bool)] {
+    func screens() -> [(frame: CGRect, visibleFrame: CGRect, isMain: Bool)] {
         mockScreens
     }
 }
@@ -63,10 +63,11 @@ final class MockAccessibilityProvider: AccessibilityProvider, @unchecked Sendabl
 func makeDisplay(
     index: Int = 1,
     frame: CGRect = CGRect(x: 0, y: 0, width: 1440, height: 900),
+    visibleFrame: CGRect? = nil,
     isMain: Bool = true,
     name: String = "Built-in"
 ) -> DisplayInfo {
-    DisplayInfo(index: index, frame: frame, isMain: isMain, name: name)
+    DisplayInfo(index: index, frame: frame, visibleFrame: visibleFrame ?? frame, isMain: isMain, name: name)
 }
 
 func makeWindow(

@@ -255,11 +255,13 @@ struct WindowManagerTests {
         let target = makeDisplay(
             index: 1,
             frame: CGRect(x: 0, y: 0, width: 1800, height: 1169),
+            visibleFrame: CGRect(x: 0, y: 38, width: 1800, height: 1131),
             isMain: true, name: "Main"
         )
         let source = makeDisplay(
             index: 2,
             frame: CGRect(x: -734, y: -1890, width: 3360, height: 1890),
+            visibleFrame: CGRect(x: -734, y: -1890, width: 3360, height: 1890),
             isMain: false, name: "External"
         )
 
@@ -282,8 +284,8 @@ struct WindowManagerTests {
             // Should have 2 moveWindow calls: initial + correction
             #expect(mock.movedWindows.count == 2)
             let corrected = mock.movedWindows[1].bounds
-            // Right edge must not exceed target display - sideMargin
-            let maxX = target.x + target.width - Constants.sideMargin
+            // Right edge must not exceed target safe area
+            let maxX = target.visibleFrame.origin.x + target.visibleFrame.width
             #expect(corrected.origin.x + corrected.width <= maxX)
         }
 
@@ -306,7 +308,7 @@ struct WindowManagerTests {
 
             #expect(mock.movedWindows.count == 2)
             let corrected = mock.movedWindows[1].bounds
-            let maxY = target.y + target.height - Constants.bottomMargin
+            let maxY = target.visibleFrame.origin.y + target.visibleFrame.height
             #expect(corrected.origin.y + corrected.height <= maxY)
         }
 
@@ -351,8 +353,8 @@ struct WindowManagerTests {
             } else {
                 // Correction was applied — verify it's within bounds
                 let corrected = mock.movedWindows[1].bounds
-                let maxX = target.x + target.width - Constants.sideMargin
-                let maxY = target.y + target.height - Constants.bottomMargin
+                let maxX = target.visibleFrame.origin.x + target.visibleFrame.width
+                let maxY = target.visibleFrame.origin.y + target.visibleFrame.height
                 #expect(corrected.origin.x + corrected.width <= maxX)
                 #expect(corrected.origin.y + corrected.height <= maxY)
             }

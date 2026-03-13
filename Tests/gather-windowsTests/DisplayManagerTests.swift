@@ -11,7 +11,7 @@ struct DisplayManagerTests {
     struct GetAllDisplaysTests {
         @Test func singleMainDisplay_returnsOneDisplayMarkedMain() {
             let provider = MockScreenProvider(mockScreens: [
-                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true)
+                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), visibleFrame: CGRect.zero, isMain: true)
             ])
             let dm = DisplayManager(screenProvider: provider)
             let displays = dm.getAllDisplays()
@@ -25,8 +25,8 @@ struct DisplayManagerTests {
 
         @Test func twoDisplays_mainFlagCorrect() {
             let provider = MockScreenProvider(mockScreens: [
-                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true),
-                (frame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), isMain: false)
+                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), visibleFrame: CGRect.zero, isMain: true),
+                (frame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), visibleFrame: CGRect.zero, isMain: false)
             ])
             let dm = DisplayManager(screenProvider: provider)
             let displays = dm.getAllDisplays()
@@ -154,9 +154,9 @@ struct DisplayManagerTests {
     @Suite("displayForNumber")
     struct DisplayForNumberTests {
         @Test func number1_returnsMainDisplay() {
-            let screens: [(frame: CGRect, isMain: Bool)] = [
-                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true),
-                (frame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), isMain: false),
+            let screens: [(frame: CGRect, visibleFrame: CGRect, isMain: Bool)] = [
+                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), visibleFrame: CGRect.zero, isMain: true),
+                (frame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), visibleFrame: CGRect.zero, isMain: false),
             ]
             let dm = DisplayManager(screenProvider: MockScreenProvider(mockScreens: screens))
             let display = dm.displayForNumber(1)
@@ -167,9 +167,9 @@ struct DisplayManagerTests {
         }
 
         @Test func number2_returnsSecondDisplay() {
-            let screens: [(frame: CGRect, isMain: Bool)] = [
-                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true),
-                (frame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), isMain: false),
+            let screens: [(frame: CGRect, visibleFrame: CGRect, isMain: Bool)] = [
+                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), visibleFrame: CGRect.zero, isMain: true),
+                (frame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), visibleFrame: CGRect.zero, isMain: false),
             ]
             let dm = DisplayManager(screenProvider: MockScreenProvider(mockScreens: screens))
             let display = dm.displayForNumber(2)
@@ -180,8 +180,8 @@ struct DisplayManagerTests {
         }
 
         @Test func invalidNumber_returnsNil() {
-            let screens: [(frame: CGRect, isMain: Bool)] = [
-                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true),
+            let screens: [(frame: CGRect, visibleFrame: CGRect, isMain: Bool)] = [
+                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), visibleFrame: CGRect.zero, isMain: true),
             ]
             let dm = DisplayManager(screenProvider: MockScreenProvider(mockScreens: screens))
             let display = dm.displayForNumber(5)
@@ -190,8 +190,8 @@ struct DisplayManagerTests {
         }
 
         @Test func number0_returnsNil() {
-            let screens: [(frame: CGRect, isMain: Bool)] = [
-                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true),
+            let screens: [(frame: CGRect, visibleFrame: CGRect, isMain: Bool)] = [
+                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), visibleFrame: CGRect.zero, isMain: true),
             ]
             let dm = DisplayManager(screenProvider: MockScreenProvider(mockScreens: screens))
 
@@ -200,9 +200,9 @@ struct DisplayManagerTests {
 
         @Test func usesScreenNumberingOrder() {
             // External on left, main on right — external should be #2 despite being first in array
-            let screens: [(frame: CGRect, isMain: Bool)] = [
-                (frame: CGRect(x: -1920, y: 0, width: 1920, height: 1080), isMain: false),
-                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true),
+            let screens: [(frame: CGRect, visibleFrame: CGRect, isMain: Bool)] = [
+                (frame: CGRect(x: -1920, y: 0, width: 1920, height: 1080), visibleFrame: CGRect.zero, isMain: false),
+                (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), visibleFrame: CGRect.zero, isMain: true),
             ]
             let dm = DisplayManager(screenProvider: MockScreenProvider(mockScreens: screens))
 

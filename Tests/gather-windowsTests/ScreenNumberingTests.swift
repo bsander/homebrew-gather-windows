@@ -6,8 +6,8 @@ import CoreGraphics
 struct ScreenNumberingTests {
 
     @Test func mainDisplayAlwaysGetsNumber1() {
-        let screens: [(frame: CGRect, isMain: Bool)] = [
-            (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true)
+        let screens: [(frame: CGRect, visibleFrame: CGRect, isMain: Bool)] = [
+            (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), visibleFrame: .zero, isMain: true)
         ]
         let result = ScreenNumbering.assignNumbers(screens)
 
@@ -17,10 +17,10 @@ struct ScreenNumberingTests {
     }
 
     @Test func mainIsFirst_othersLeftToRight() {
-        let screens: [(frame: CGRect, isMain: Bool)] = [
-            (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true),
-            (frame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), isMain: false),
-            (frame: CGRect(x: 3360, y: 0, width: 2560, height: 1440), isMain: false),
+        let screens: [(frame: CGRect, visibleFrame: CGRect, isMain: Bool)] = [
+            (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), visibleFrame: .zero, isMain: true),
+            (frame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), visibleFrame: .zero, isMain: false),
+            (frame: CGRect(x: 3360, y: 0, width: 2560, height: 1440), visibleFrame: .zero, isMain: false),
         ]
         let result = ScreenNumbering.assignNumbers(screens)
 
@@ -35,9 +35,9 @@ struct ScreenNumberingTests {
 
     @Test func mainNotFirstInArray_stillGetsNumber1() {
         // Main display is second in the array but should still be 1
-        let screens: [(frame: CGRect, isMain: Bool)] = [
-            (frame: CGRect(x: -1920, y: 0, width: 1920, height: 1080), isMain: false),
-            (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true),
+        let screens: [(frame: CGRect, visibleFrame: CGRect, isMain: Bool)] = [
+            (frame: CGRect(x: -1920, y: 0, width: 1920, height: 1080), visibleFrame: .zero, isMain: false),
+            (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), visibleFrame: .zero, isMain: true),
         ]
         let result = ScreenNumbering.assignNumbers(screens)
 
@@ -52,10 +52,10 @@ struct ScreenNumberingTests {
     }
 
     @Test func externalsOrderedByXPosition() {
-        let screens: [(frame: CGRect, isMain: Bool)] = [
-            (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true),
-            (frame: CGRect(x: 3000, y: 0, width: 1920, height: 1080), isMain: false),
-            (frame: CGRect(x: -2560, y: 0, width: 2560, height: 1440), isMain: false),
+        let screens: [(frame: CGRect, visibleFrame: CGRect, isMain: Bool)] = [
+            (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), visibleFrame: .zero, isMain: true),
+            (frame: CGRect(x: 3000, y: 0, width: 1920, height: 1080), visibleFrame: .zero, isMain: false),
+            (frame: CGRect(x: -2560, y: 0, width: 2560, height: 1440), visibleFrame: .zero, isMain: false),
         ]
         let result = ScreenNumbering.assignNumbers(screens)
 
@@ -71,9 +71,9 @@ struct ScreenNumberingTests {
     @Test func differentHeightDisplays_usesCGCoordinates() {
         // In CG coords: taller secondary has negative y (top extends above primary)
         // Primary: 1440x900 at (0,0), Secondary: 1920x1080 at (1440,-180)
-        let screens: [(frame: CGRect, isMain: Bool)] = [
-            (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true),
-            (frame: CGRect(x: 1440, y: -180, width: 1920, height: 1080), isMain: false),
+        let screens: [(frame: CGRect, visibleFrame: CGRect, isMain: Bool)] = [
+            (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), visibleFrame: .zero, isMain: true),
+            (frame: CGRect(x: 1440, y: -180, width: 1920, height: 1080), visibleFrame: .zero, isMain: false),
         ]
         let result = ScreenNumbering.assignNumbers(screens)
 
@@ -88,9 +88,9 @@ struct ScreenNumberingTests {
     }
 
     @Test func namesAreCorrect() {
-        let screens: [(frame: CGRect, isMain: Bool)] = [
-            (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), isMain: true),
-            (frame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), isMain: false),
+        let screens: [(frame: CGRect, visibleFrame: CGRect, isMain: Bool)] = [
+            (frame: CGRect(x: 0, y: 0, width: 1440, height: 900), visibleFrame: .zero, isMain: true),
+            (frame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), visibleFrame: .zero, isMain: false),
         ]
         let result = ScreenNumbering.assignNumbers(screens)
 

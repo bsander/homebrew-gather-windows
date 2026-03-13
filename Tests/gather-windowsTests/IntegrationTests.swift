@@ -94,14 +94,14 @@ struct IntegrationTests {
         #expect(match == nil)
     }
 
-    @Test func realDisplayHasSafeArea_smallerThanFrame() {
+    @Test func realDisplayHasSafeArea_notLargerThanFrame() {
         let dm = DisplayManager()
         let displays = dm.getAllDisplays()
 
         for display in displays {
             let safe = display.safeArea
-            #expect(safe.width < display.width)
-            #expect(safe.height < display.height)
+            #expect(safe.width <= display.width)
+            #expect(safe.height <= display.height)
         }
     }
 }

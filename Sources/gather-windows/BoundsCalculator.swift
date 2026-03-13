@@ -3,31 +3,81 @@ import CoreGraphics
 
 /// Calculates new window bounds for moving to target display
 class BoundsCalculator {
+    /// Snap tolerance in points for detecting edge-snapped windows
+    static let snapTolerance: CGFloat = 10
+
     /// Calculate new bounds for window moving from source to target display.
-    /// Maps the window's relative position and size proportionally.
-    /// Clamps to target safe area so windows never end up off-screen.
+    /// Uses uniform scaling (aspect-ratio preserving) with snap-to-edge detection.
+    /// Windows are positioned within an aspect-matched sub-region of the target,
+    /// centered on the extra axis. Clamps to target safe area.
     static func calculateNewBounds(
         _ windowBounds: CGRect,
         sourceDisplay: DisplayInfo,
         targetDisplay: DisplayInfo
     ) -> CGRect {
-        // Compute relative position and size against source display frame
-        let relX = (windowBounds.origin.x - sourceDisplay.x) / sourceDisplay.width
-        let relY = (windowBounds.origin.y - sourceDisplay.y) / sourceDisplay.height
-        let relW = windowBounds.width / sourceDisplay.width
-        let relH = windowBounds.height / sourceDisplay.height
+        // Uniform scale factor: use the smaller ratio to preserve aspect ratio
+        let scaleX = targetDisplay.width / sourceDisplay.width
+        let scaleY = targetDisplay.height / sourceDisplay.height
+        let scale = min(scaleX, scaleY)
 
-        // Map to target display frame
-        var newX = targetDisplay.x + relX * targetDisplay.width
-        var newY = targetDisplay.y + relY * targetDisplay.height
-        var newWidth = relW * targetDisplay.width
-        var newHeight = relH * targetDisplay.height
+        // Scale window size uniformly
+        var newWidth = (windowBounds.width * scale).rounded()
+        var newHeight = (windowBounds.height * scale).rounded()
 
-        // Round all values (accessibility API needs integers)
-        newX = newX.rounded()
-        newY = newY.rounded()
-        newWidth = newWidth.rounded()
-        newHeight = newHeight.rounded()
+        // Aspect-matched region: source display scaled uniformly, centered in target
+        let regionWidth = sourceDisplay.width * scale
+        let regionHeight = sourceDisplay.height * scale
+        let regionX = targetDisplay.x + ((targetDisplay.width - regionWidth) / 2).rounded()
+        let regionY = targetDisplay.y + ((targetDisplay.height - regionHeight) / 2).rounded()
+
+        // Map position within the aspect-matched region
+        let offsetX = windowBounds.origin.x - sourceDisplay.x
+        let offsetY = windowBounds.origin.y - sourceDisplay.y
+        var newX = (regionX + offsetX * scale).rounded()
+        var newY = (regionY + offsetY * scale).rounded()
+
+        // Snap-to-edge: if window was flush with a source edge,
+        // snap to the corresponding target edge instead of the region edge.
+        // Uses source display's visibleFrame insets for detection tolerance
+        // and target display's visibleFrame for placement.
+        let tol = snapTolerance
+
+        // Detect edge snaps using source display insets
+        let sourceTopTol = max(tol, sourceDisplay.topInset + tol)
+        let sourceBottomTol = max(tol, sourceDisplay.bottomInset + tol)
+        let sourceLeftTol = max(tol, sourceDisplay.leftInset + tol)
+        let sourceRightTol = max(tol, sourceDisplay.rightInset + tol)
+
+        let snappedLeft = offsetX <= sourceLeftTol
+        let snappedRight = sourceDisplay.width - (offsetX + windowBounds.width) <= sourceRightTol
+        let snappedTop = offsetY <= sourceTopTol
+        let snappedBottom = sourceDisplay.height - (offsetY + windowBounds.height) <= sourceBottomTol
+
+        // If snapped to ALL four edges (maximized), use proportional scaling only
+        if snappedLeft && snappedRight && snappedTop && snappedBottom {
+            let unclamped = CGRect(x: newX, y: newY, width: newWidth, height: newHeight)
+            return clampToSafeArea(unclamped, targetDisplay: targetDisplay)
+        }
+
+        // Use target display's real visibleFrame insets for snap placement
+        let targetSafe = targetDisplay.visibleFrame
+
+        // Full-span detection: if snapped to opposite edges, fill the target safe area
+        if snappedLeft && snappedRight {
+            newWidth = targetSafe.width
+            newX = targetSafe.origin.x
+        } else {
+            if snappedLeft { newX = targetSafe.origin.x }
+            if snappedRight { newX = targetSafe.origin.x + targetSafe.width - newWidth }
+        }
+
+        if snappedTop && snappedBottom {
+            newHeight = targetSafe.height
+            newY = targetSafe.origin.y
+        } else {
+            if snappedTop { newY = targetSafe.origin.y }
+            if snappedBottom { newY = targetSafe.origin.y + targetSafe.height - newHeight }
+        }
 
         let unclamped = CGRect(x: newX, y: newY, width: newWidth, height: newHeight)
         return clampToSafeArea(unclamped, targetDisplay: targetDisplay)
@@ -37,20 +87,15 @@ class BoundsCalculator {
     /// Used both during initial calculation and for post-move correction
     /// when an app enforces a minimum size larger than requested.
     static func clampToSafeArea(_ bounds: CGRect, targetDisplay: DisplayInfo) -> CGRect {
-        let topMargin = Constants.topMargin
-        let sideMargin = Constants.sideMargin
-        let bottomMargin = Constants.bottomMargin
+        let safe = targetDisplay.visibleFrame
 
-        let safeWidth = targetDisplay.width - (sideMargin * 2)
-        let safeHeight = targetDisplay.height - topMargin - bottomMargin
-
-        let newWidth = min(bounds.width, safeWidth)
-        let newHeight = min(bounds.height, safeHeight)
+        let newWidth = min(bounds.width, safe.width)
+        let newHeight = min(bounds.height, safe.height)
         var newX = bounds.origin.x
         var newY = bounds.origin.y
 
-        let maxX = targetDisplay.x + targetDisplay.width - sideMargin
-        let maxY = targetDisplay.y + targetDisplay.height - bottomMargin
+        let maxX = safe.origin.x + safe.width
+        let maxY = safe.origin.y + safe.height
 
         if newX + newWidth > maxX {
             newX = maxX - newWidth
@@ -58,11 +103,11 @@ class BoundsCalculator {
         if newY + newHeight > maxY {
             newY = maxY - newHeight
         }
-        if newX < targetDisplay.x + sideMargin {
-            newX = targetDisplay.x + sideMargin
+        if newX < safe.origin.x {
+            newX = safe.origin.x
         }
-        if newY < targetDisplay.y + topMargin {
-            newY = targetDisplay.y + topMargin
+        if newY < safe.origin.y {
+            newY = safe.origin.y
         }
 
         return CGRect(x: newX, y: newY, width: newWidth, height: newHeight)

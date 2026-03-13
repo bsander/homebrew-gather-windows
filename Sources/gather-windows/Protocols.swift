@@ -5,7 +5,7 @@ import ApplicationServices
 
 /// Abstracts NSScreen.screens for testability
 protocol ScreenProvider: Sendable {
-    func screens() -> [(frame: CGRect, isMain: Bool)]
+    func screens() -> [(frame: CGRect, visibleFrame: CGRect, isMain: Bool)]
 }
 
 /// Abstracts NSWorkspace.shared.runningApplications for testability
@@ -53,7 +53,7 @@ enum CoordinateConverter {
 // MARK: - Production Conformances
 
 struct SystemScreenProvider: ScreenProvider {
-    func screens() -> [(frame: CGRect, isMain: Bool)] {
+    func screens() -> [(frame: CGRect, visibleFrame: CGRect, isMain: Bool)] {
         let screens = NSScreen.screens
         guard let primary = screens.first else { return [] }
         let primaryHeight = primary.frame.height
@@ -62,7 +62,11 @@ struct SystemScreenProvider: ScreenProvider {
                 frame: screen.frame,
                 primaryScreenHeight: primaryHeight
             )
-            return (cgFrame, screen == primary)
+            let cgVisibleFrame = CoordinateConverter.cocoaToCG(
+                frame: screen.visibleFrame,
+                primaryScreenHeight: primaryHeight
+            )
+            return (cgFrame, cgVisibleFrame, screen == primary)
         }
     }
 }
@@ -114,13 +118,23 @@ struct SystemAccessibilityProvider: AccessibilityProvider {
             return false
         }
 
+        // Position FIRST: move window to target display so macOS applies
+        // the target display's constraints when we resize.
+        // If size is set first, macOS constrains it to the source display.
+        let positionResult = AXUIElementSetAttributeValue(
+            element,
+            kAXPositionAttribute as CFString,
+            positionValue
+        )
+
         let sizeResult = AXUIElementSetAttributeValue(
             element,
             kAXSizeAttribute as CFString,
             sizeValue
         )
 
-        let positionResult = AXUIElementSetAttributeValue(
+        // Re-set position: resizing may shift the window origin
+        AXUIElementSetAttributeValue(
             element,
             kAXPositionAttribute as CFString,
             positionValue

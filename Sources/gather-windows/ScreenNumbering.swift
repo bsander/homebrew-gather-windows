@@ -5,7 +5,7 @@ enum ScreenNumbering {
     /// Takes raw screen data, returns numbered DisplayInfo list.
     /// Main display always gets index 1. Remaining screens are numbered 2, 3, ...
     /// sorted by frame.origin.x (left-to-right).
-    static func assignNumbers(_ screens: [(frame: CGRect, isMain: Bool)]) -> [DisplayInfo] {
+    static func assignNumbers(_ screens: [(frame: CGRect, visibleFrame: CGRect, isMain: Bool)]) -> [DisplayInfo] {
         guard !screens.isEmpty else { return [] }
 
         var result: [DisplayInfo] = []
@@ -15,6 +15,7 @@ enum ScreenNumbering {
             result.append(DisplayInfo(
                 index: 1,
                 frame: main.frame,
+                visibleFrame: main.visibleFrame,
                 isMain: true,
                 name: "Main Display"
             ))
@@ -31,6 +32,7 @@ enum ScreenNumbering {
             result.append(DisplayInfo(
                 index: number,
                 frame: screen.frame,
+                visibleFrame: screen.visibleFrame,
                 isMain: false,
                 name: "Display \(number)"
             ))

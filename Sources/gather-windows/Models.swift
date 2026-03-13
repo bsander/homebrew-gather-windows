@@ -5,6 +5,7 @@ import ApplicationServices
 struct DisplayInfo {
     let index: Int
     let frame: CGRect
+    let visibleFrame: CGRect
     let isMain: Bool
     let name: String
 
@@ -13,15 +14,14 @@ struct DisplayInfo {
     var x: CGFloat { frame.origin.x }
     var y: CGFloat { frame.origin.y }
 
-    /// Safe area accounting for menu bar and dock margins
-    var safeArea: CGRect {
-        CGRect(
-            x: frame.origin.x + Constants.sideMargin,
-            y: frame.origin.y + Constants.topMargin,
-            width: frame.width - (Constants.sideMargin * 2),
-            height: frame.height - Constants.topMargin - Constants.bottomMargin
-        )
-    }
+    /// Real safe area from NSScreen.visibleFrame (accounts for menu bar, dock, notch)
+    var safeArea: CGRect { visibleFrame }
+
+    /// Insets derived from visibleFrame relative to frame
+    var topInset: CGFloat { visibleFrame.origin.y - frame.origin.y }
+    var leftInset: CGFloat { visibleFrame.origin.x - frame.origin.x }
+    var rightInset: CGFloat { (frame.origin.x + frame.width) - (visibleFrame.origin.x + visibleFrame.width) }
+    var bottomInset: CGFloat { (frame.origin.y + frame.height) - (visibleFrame.origin.y + visibleFrame.height) }
 }
 
 /// Window information extracted from Accessibility API
@@ -48,14 +48,7 @@ struct MoveResult {
     let verifiedCount: Int
 }
 
-/// Constants matching JXA implementation
 enum Constants {
-    /// Top margin for menu bar (MUST match JXA line 379)
-    static let topMargin: CGFloat = 80
-    /// Side margins (MUST match JXA line 380)
-    static let sideMargin: CGFloat = 20
-    /// Bottom margin (MUST match JXA line 381)
-    static let bottomMargin: CGFloat = 20
     /// Tolerance for position verification (JXA line 317)
     static let verificationMargin: CGFloat = 50
 }
