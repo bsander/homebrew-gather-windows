@@ -6,7 +6,7 @@ INSTALL_DIR = /Applications
 CLI_LINK = /usr/local/bin/gather-windows
 CODESIGN_IDENTITY = Gather Windows Dev
 
-.PHONY: build test run release install dev uninstall clean help setup-codesign
+.PHONY: build test run release install dev uninstall clean help setup-codesign icon
 
 build: ## Build debug .app bundle
 	swift build --disable-sandbox
@@ -42,6 +42,17 @@ uninstall: ## Remove .app from /Applications and CLI symlink
 clean: ## Remove build artifacts
 	swift package clean
 	rm -rf .build
+
+icon: ## Regenerate AppIcon.icns from appicon.png
+	mkdir -p AppIcon.iconset
+	@for size in 16 32 128 256 512; do \
+		sips -z $$size $$size assets/appicon.png --out "AppIcon.iconset/icon_$${size}x$${size}.png" >/dev/null 2>&1; \
+		double=$$((size * 2)); \
+		sips -z $$double $$double assets/appicon.png --out "AppIcon.iconset/icon_$${size}x$${size}@2x.png" >/dev/null 2>&1; \
+	done
+	iconutil -c icns AppIcon.iconset -o AppIcon.icns
+	rm -rf AppIcon.iconset
+	@echo "AppIcon.icns regenerated from appicon.png"
 
 setup-codesign: ## Create self-signed cert for persistent TCC permissions
 	@bash scripts/create-codesign-cert.sh "$(CODESIGN_IDENTITY)"
