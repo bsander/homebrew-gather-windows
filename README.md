@@ -42,6 +42,7 @@ Double-click the app or run `open "/Applications/Gather Windows.app"`. Numbered 
 
 ```
 gather-windows <target-display-number>
+gather-windows main
 gather-windows --list
 ```
 
@@ -50,7 +51,16 @@ gather-windows --list
 | Argument | Description |
 |----------|-------------|
 | `<number>` | Target display number to gather all windows to |
+| `main` | Alias for screen 1 (the main display) |
 | `--list` | List all displays with their numbers |
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--verbose`, `-v` | Show detailed logging |
+| `--include-fullscreen` | Move fullscreen windows too |
+| `--hide-during-move` | Hide windows before moving |
 
 ## Development
 

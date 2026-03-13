@@ -1,9 +1,9 @@
 class GatherWindows < Formula
   desc "macOS CLI that moves windows from external displays to built-in display"
   homepage "https://github.com/bsander/homebrew-gather-windows"
-  url "https://github.com/bsander/homebrew-gather-windows/releases/download/v0.2026.0311.1/gather-windows-v0.2026.0311.1-macos.tar.gz"
-  version "0.2026.0311.1"
-  sha256 "3e03c1126f93b348f80e04d14f626dc080017f4cb7762c963f5a65a648cd2e6e"
+  url "https://github.com/bsander/homebrew-gather-windows/releases/download/v0.2026.0313/gather-windows-v0.2026.0313-macos.tar.gz"
+  version "0.2026.0313"
+  sha256 "d50e8c5d4a8d5fde1356dbb72d49bc576c3995a1c7c98a0c1f82435d7005c13d"
   license "MIT"
 
   depends_on :macos
