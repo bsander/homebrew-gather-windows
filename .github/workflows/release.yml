@@ -71,20 +71,16 @@ jobs:
             "Gather-Windows-${TAG}.zip" \
             --generate-notes
 
-      - name: Update formula on brew branch
+      - name: Update cask on brew branch
         run: |
           TAG="${{ steps.version.outputs.tag }}"
-          SHA256=$(shasum -a 256 "gather-windows-${TAG}-macos.tar.gz" | awk '{print $1}')
-          ASSET_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/gather-windows-${TAG}-macos.tar.gz"
           VERSION="${TAG#v}"
           BREW_DIR=$(mktemp -d)
           git clone --branch brew --single-branch "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" "$BREW_DIR"
           cd "$BREW_DIR"
-          sed -i '' "s|url \".*\"|url \"${ASSET_URL}\"|" Formula/gather-windows.rb
-          sed -i '' "s|version \".*\"|version \"${VERSION}\"|" Formula/gather-windows.rb
-          sed -i '' "s|sha256 \".*\"|sha256 \"${SHA256}\"|" Formula/gather-windows.rb
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git rm -rf Formula/ 2>/dev/null || true
           NOTICE='> **Note:** This is the Homebrew tap branch. Source code and development happens on the [`main` branch](https://github.com/${{ github.repository }}/tree/main).\n'
           printf '%b\n%s\n' "$NOTICE" "$(cat "$GITHUB_WORKSPACE/README.md")" > README.md
           mkdir -p assets
@@ -94,6 +90,6 @@ jobs:
           mkdir -p Casks
           HOMEPAGE="https://github.com/${{ github.repository }}"
           sed "s|VERSION_PH|${VERSION}|;s|SHA256_PH|${APP_SHA256}|;s|URL_PH|${APP_URL}|;s|HOMEPAGE_PH|${HOMEPAGE}|" "$GITHUB_WORKSPACE/cask-template.rb" > Casks/gather-windows.rb
-          git add Formula/gather-windows.rb Casks/gather-windows.rb README.md assets/appicon-128-rounded.png
-          git commit -m "Update formula and cask for ${TAG}"
+          git add -A
+          git commit -m "Update cask for ${TAG}"
           git push origin brew

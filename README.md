@@ -10,17 +10,11 @@ Gather all your windows onto a single display instantly.
 
 ### Homebrew (recommended)
 
-**App** (installs to /Applications):
-
 ```bash
 brew install --cask bsander/gather-windows/gather-windows
 ```
 
-**CLI only**:
-
-```bash
-brew install bsander/gather-windows/gather-windows
-```
+Installs the app to `/Applications` and the `gather-windows` CLI to your PATH.
 
 ### From source
 
