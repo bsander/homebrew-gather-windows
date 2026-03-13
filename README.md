@@ -6,6 +6,10 @@
 
 Gather all your windows onto a single display instantly.
 
+<p align="center">
+  <img src="assets/gather-windows-demo.gif" width="480" alt="Gather Windows demo">
+</p>
+
 ## Installation
 
 ### Homebrew (recommended)

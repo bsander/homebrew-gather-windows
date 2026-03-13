@@ -85,6 +85,7 @@ jobs:
           printf '%b\n%s\n' "$NOTICE" "$(cat "$GITHUB_WORKSPACE/README.md")" > README.md
           mkdir -p assets
           cp "$GITHUB_WORKSPACE/assets/appicon-128-rounded.png" assets/
+          cp "$GITHUB_WORKSPACE/assets/gather-windows-demo.gif" assets/
           APP_SHA256=$(shasum -a 256 "$GITHUB_WORKSPACE/Gather-Windows-${TAG}.zip" | awk '{print $1}')
           APP_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/Gather-Windows-${TAG}.zip"
           mkdir -p Casks
