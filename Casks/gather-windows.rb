@@ -1,8 +1,8 @@
 cask "gather-windows" do
-  version "0.2026.0313"
-  sha256 "16eee3c5f8b529d1af7e4ac84169c45823ea57ce2408d694b3247a9d0692e0a9"
+  version "0.2026.0313.1"
+  sha256 "33ff262c4d4fc33ff054577b98b35993e5316d115ac92318dc14f51f6a34534c"
 
-  url "https://github.com/bsander/homebrew-gather-windows/releases/download/v0.2026.0313/Gather-Windows-v0.2026.0313.zip"
+  url "https://github.com/bsander/homebrew-gather-windows/releases/download/v0.2026.0313.1/Gather-Windows-v0.2026.0313.1.zip"
   name "Gather Windows"
   desc "Move windows from external displays to a target display"
   homepage "https://github.com/bsander/homebrew-gather-windows"

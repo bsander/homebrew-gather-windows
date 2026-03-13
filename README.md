@@ -1,23 +1,19 @@
 > **Note:** This is the Homebrew tap branch. Source code and development happens on the [`main` branch](https://github.com/bsander/homebrew-gather-windows/tree/main).
 
-# gather-windows
+<p align="center">
+  <img src="assets/appicon-128.png" width="128" height="128">
+</p>
 
-A macOS app that shows numbered overlays on each screen, letting you pick a target display to gather all windows to. Also supports CLI mode when invoked with arguments.
+# Gather Windows
+
+Gather all your windows onto a single display instantly.
 
 ## Installation
 
 ### Homebrew (recommended)
 
-**App** (installs to /Applications):
-
 ```bash
 brew install --cask bsander/gather-windows/gather-windows
-```
-
-**CLI only**:
-
-```bash
-brew install bsander/gather-windows/gather-windows
 ```
 
 ### From source
@@ -34,33 +30,7 @@ make install
 
 ## Usage
 
-### App mode
-
 Double-click the app or run `open "/Applications/Gather Windows.app"`. Numbered overlays appear on each screen — press a number key to gather all windows to that display. Press Escape to cancel.
-
-### CLI mode
-
-```
-gather-windows <target-display-number>
-gather-windows main
-gather-windows --list
-```
-
-**Arguments:**
-
-| Argument | Description |
-|----------|-------------|
-| `<number>` | Target display number to gather all windows to |
-| `main` | Alias for screen 1 (the main display) |
-| `--list` | List all displays with their numbers |
-
-**Options:**
-
-| Option | Description |
-|--------|-------------|
-| `--verbose`, `-v` | Show detailed logging |
-| `--include-fullscreen` | Move fullscreen windows too |
-| `--hide-during-move` | Hide windows before moving |
 
 ## Development
 
